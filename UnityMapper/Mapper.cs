@@ -1044,14 +1044,14 @@ namespace Mapper
         }
 
         [DllImport("mapper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
-        unsafe private static extern void* mpr_sig_get_value(IntPtr sig, UInt64 id, ref MprTime time);
+        unsafe private static extern void* mpr_sig_get_value(IntPtr sig, UInt64 id, ref long time);
         unsafe public (object, Time) GetValue(UInt64 instanceId = 0)
         {
             int len = mpr_obj_get_prop_as_int32(this._obj, (int)Property.Length, null);
             int type = mpr_obj_get_prop_as_int32(this._obj, (int)Property.Type, null);
-            MprTime time = new MprTime();
+            long time = 0;
             void *val = mpr_sig_get_value(this._obj, instanceId, ref time);
-            return (BuildValue(len, type, val, 0), new Time(time.ntp));
+            return (BuildValue(len, type, val, 0), new Time(time));
         }
         // unsafe public object GetValue(UInt64 instanceId = 0)
         // {
