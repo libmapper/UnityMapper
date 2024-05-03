@@ -15,7 +15,7 @@ public class LibmapperDevice : MonoBehaviour
 
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
-    [SerializeField] private int pollTime = 10;
+    [SerializeField] private int pollTime = 1;
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
