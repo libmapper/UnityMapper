@@ -107,9 +107,9 @@ public class LibmapperDevice : MonoBehaviour
             return Mapper.Type.Null;
         }
     }
-    
-    
-    protected static System.Collections.Generic.List<MappedProperty> CreateMapping(Component target)
+
+
+    private static System.Collections.Generic.List<MappedProperty> CreateMapping(Component target)
     {
         if (target is Transform transformTarget)
         {
@@ -141,17 +141,10 @@ public class LibmapperDevice : MonoBehaviour
 
 
 
-public struct PollJob : IJob
+public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob
 {
     [NativeDisableUnsafePtrRestriction] // it's probably still unsafe but I don't care
-    private readonly IntPtr _devicePtr;
-    private readonly int pollTime;
-
-    public PollJob(IntPtr devicePtr, int pollTime)
-    {
-        _devicePtr = devicePtr;
-        this.pollTime = pollTime;
-    }
+    private readonly IntPtr _devicePtr = devicePtr;
 
     public void Execute()
     {
