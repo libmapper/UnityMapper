@@ -128,57 +128,40 @@ public class LibmapperDevice : MonoBehaviour
 }
 
 
-class MappedClassProperty : MappedProperty
+class MappedClassProperty(FieldInfo info, object target) : MappedProperty
 {
-    private FieldInfo _info;
-    private object _target;
-
-    public MappedClassProperty(FieldInfo info, object target)
-    {
-        _info = info;
-        _target = target;
-    }
-
     public Type GetMappedType()
     {
-        return _info.FieldType;
+        return info.FieldType;
     }
 
     public void SetObject(object value)
     {
-        _info.SetValue(_target, value);
+        info.SetValue(target, value);
     }
 
     public object GetValue()
     {
-        return _info.GetValue(_target);
+        return info.GetValue(target);
     }
 
     public string GetName()
     {
-        return _info.DeclaringType.Name + "." + _info.Name;
+        return info.DeclaringType.Name + "." + info.Name;
     }
 }
 
 
-class MappedPosition : MappedProperty
+class MappedPosition(Transform transform) : MappedProperty
 {
-    private readonly Transform _transform;
-    
-    
-    public MappedPosition(Transform transform)
-    {
-        _transform = transform;
-    }
-
     public void SetObject(object val)
     {
         var value = (Single[])val;
-        _transform.position = new Vector3(value[0], value[1], value[2]);
+        transform.position = new Vector3(value[0], value[1], value[2]);
     }
     public object GetValue()
     {
-        return new float[] {_transform.position.x, _transform.position.y, _transform.position.z};
+        return new float[] {transform.position.x, transform.position.y, transform.position.z};
     }
 
     public Type GetMappedType()
@@ -196,24 +179,16 @@ class MappedPosition : MappedProperty
         return "Position";
     }
 }
-class MappedScale : MappedProperty
+class MappedScale(Transform transform) : MappedProperty
 {
-    private readonly Transform _transform;
-    
-    
-    public MappedScale(Transform transform)
-    {
-        _transform = transform;
-    }
-
     public void SetObject(object val)
     {
         var value = (Single[])val;
-        _transform.localScale = new Vector3(value[0], value[1], value[2]);
+        transform.localScale = new Vector3(value[0], value[1], value[2]);
     }
     public object GetValue()
     {
-        return new float[] {_transform.localScale.x, _transform.localScale.y, _transform.localScale.z};
+        return new float[] {transform.localScale.x, transform.localScale.y, transform.localScale.z};
     }
 
     public Type GetMappedType()
@@ -231,24 +206,16 @@ class MappedScale : MappedProperty
         return "Scale";
     }
 }
-class MappedRotation : MappedProperty
+class MappedRotation(Transform transform) : MappedProperty
 {
-    private readonly Transform _transform;
-    
-    
-    public MappedRotation(Transform transform)
-    {
-        _transform = transform;
-    }
-
     public void SetObject(object val)
     {
         var value = (Single[])val;
-        _transform.rotation = new Quaternion(value[0], value[1], value[2], value[3]);
+        transform.rotation = new Quaternion(value[0], value[1], value[2], value[3]);
     }
     public object GetValue()
     {
-        return new float[] {_transform.rotation.x, _transform.rotation.y, _transform.rotation.z, _transform.rotation.w};
+        return new float[] {transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w};
     }
 
     public Type GetMappedType()
