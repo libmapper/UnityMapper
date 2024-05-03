@@ -44,22 +44,24 @@ namespace Mapper
         All                     = 0x10, //!< Applies to all elements of value
         Any                     = 0x20  //!< Applies to any element of value
     }
+    
+    [StructLayout(LayoutKind.Explicit)]
+    public struct MprTime
+    {
+        [FieldOffset(0)]
+        internal long ntp;
+        [FieldOffset(0)]
+        internal UInt32 sec;
+        [FieldOffset(4)]
+        internal UInt32 frac;
+    }
 
     public class Time
     {
         // internal long _time;
 
-        [StructLayout(LayoutKind.Explicit)]
-        internal struct timeStruct
-        {
-            [FieldOffset(0)]
-            internal long ntp;
-            [FieldOffset(0)]
-            internal UInt32 sec;
-            [FieldOffset(4)]
-            internal UInt32 frac;
-        }
-        internal timeStruct data;
+
+        internal MprTime data;
 
         public Time(long ntp)
             { data.ntp = ntp; }
@@ -1042,14 +1044,14 @@ namespace Mapper
         }
 
         [DllImport("mapper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
-        unsafe private static extern void* mpr_sig_get_value(IntPtr sig, UInt64 id, ref long time);
+        unsafe private static extern void* mpr_sig_get_value(IntPtr sig, UInt64 id, ref MprTime time);
         unsafe public (object, Time) GetValue(UInt64 instanceId = 0)
         {
             int len = mpr_obj_get_prop_as_int32(this._obj, (int)Property.Length, null);
             int type = mpr_obj_get_prop_as_int32(this._obj, (int)Property.Type, null);
-            long time = 0;
+            MprTime time = new MprTime();
             void *val = mpr_sig_get_value(this._obj, instanceId, ref time);
-            return (BuildValue(len, type, val, 0), null);
+            return (BuildValue(len, type, val, 0), new Time(time.ntp));
         }
         // unsafe public object GetValue(UInt64 instanceId = 0)
         // {
