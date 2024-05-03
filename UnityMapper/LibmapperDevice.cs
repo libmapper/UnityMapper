@@ -1,3 +1,4 @@
+namespace UnityMapper;
 using System.Reflection;
 using Mapper;
 using UnityEngine;
@@ -118,7 +119,7 @@ public class LibmapperDevice : MonoBehaviour
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
                 if (baseType == Mapper.Type.Null) continue;
                 Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
-                var mapped = new MappedClassProperty(prop, target);
+                var mapped = new MappedClassField(prop, target);
                 l.Add(mapped);
             }
 
@@ -126,31 +127,6 @@ public class LibmapperDevice : MonoBehaviour
         }
     }
 }
-
-
-class MappedClassProperty(FieldInfo info, object target) : MappedProperty
-{
-    public Type GetMappedType()
-    {
-        return info.FieldType;
-    }
-
-    public void SetObject(object value)
-    {
-        info.SetValue(target, value);
-    }
-
-    public object GetValue()
-    {
-        return info.GetValue(target);
-    }
-
-    public string GetName()
-    {
-        return info.DeclaringType.Name + "." + info.Name;
-    }
-}
-
 
 class MappedPosition(Transform transform) : MappedProperty
 {
@@ -232,26 +208,5 @@ class MappedRotation(Transform transform) : MappedProperty
     {
         return "Rotation";
     }
-}
-
-public interface MappedProperty
-{
-    /// <summary>
-    /// The vector size of this mapped property.
-    /// If > 1, T should be an array of a supported primitive;
-    /// </summary>
-    /// <returns>An integer >= 1</returns>
-    int GetVectorLength()
-    {
-        return 1;
-    }
-
-    Type GetMappedType();
-    
-    void SetObject(object value);
-    
-    object GetValue();
-
-    string GetName();
 }
 
