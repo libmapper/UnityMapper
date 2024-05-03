@@ -1,3 +1,4 @@
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace UnityMapper;
@@ -19,59 +20,66 @@ public class LibmapperDevice : MonoBehaviour
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
     // Start is called before the first frame update
+
+    private PollJob _job;
     void Start()
     {
         _device = new Device("UNITY_" + gameObject.name);
-        InvokeRepeating(nameof(PollDevice), 0.05f, (pollTime / 1000.0f) * 2);
+        _job = new PollJob(_device._obj, pollTime);
     }
-
-
+    
+    
     private bool _lastReady = false;
+    private JobHandle? _handle;
     // Use physics update for consistent timing
-    void PollDevice()
+    void FixedUpdate()
     {
-        _device.Poll(pollTime);
-        
-        if (_device.GetIsReady() && !_lastReady)
+        if (_handle != null)
         {
-            Debug.Log("registering signals");
-            // device just became ready
-            _lastReady = true;
-            foreach (var component in componentsToExpose)
+            _handle.Value.Complete();
+            if (_device.GetIsReady() && !_lastReady)
             {
-                var maps = CreateMapping(component);
-                
-                // TODO: this is REALLY ugly, fix later
-                foreach (var mapped in maps)
+                Debug.Log("registering signals");
+                // device just became ready
+                _lastReady = true;
+                foreach (var component in componentsToExpose)
                 {
-                    var kind = mapped.GetMappedType();
-                    var type = CreateLibmapperTypeFromPrimitive(kind);
-                    Debug.Log("Registered signal of type: " + type + " with length: " + mapped.GetVectorLength());
-                    var signal = _device.AddSignal(Signal.Direction.Incoming, mapped.GetName(), mapped.GetVectorLength(), type);
-                    _properties.Add((signal, mapped, new Mapper.Time()));
-                    signal.SetValue(mapped.GetValue());
-                }
+                    var maps = CreateMapping(component);
                 
+                    // TODO: this is REALLY ugly, fix later
+                    foreach (var mapped in maps)
+                    {
+                        var kind = mapped.GetMappedType();
+                        var type = CreateLibmapperTypeFromPrimitive(kind);
+                        Debug.Log("Registered signal of type: " + type + " with length: " + mapped.GetVectorLength());
+                        var signal = _device.AddSignal(Signal.Direction.Incoming, mapped.GetName(), mapped.GetVectorLength(), type);
+                        _properties.Add((signal, mapped, new Mapper.Time()));
+                        signal.SetValue(mapped.GetValue());
+                    }
+                
+                }
             }
-        }
-        foreach (var (signal, mapped, lastChanged) in _properties)
-        {
-            var value = signal.GetValue();
-            // check if the value has changed
-            if (value.Item2 > lastChanged)
+            foreach (var (signal, mapped, lastChanged) in _properties)
             {
-                // the value was changed on the network, so we should update the local value
-                mapped.SetObject(value.Item1);
-            }
-            else
-            {
-                // no remote updates have happened, so push our local value
-                signal.SetValue(mapped.GetValue());
-                lastChanged.Set(signal.GetValue().Item2);
-            }
+                var value = signal.GetValue();
+                // check if the value has changed
+                if (value.Item2 > lastChanged)
+                {
+                    // the value was changed on the network, so we should update the local value
+                    mapped.SetObject(value.Item1);
+                }
+                else
+                {
+                    // no remote updates have happened, so push our local value
+                    signal.SetValue(mapped.GetValue());
+                    lastChanged.Set(signal.GetValue().Item2);
+                }
             
+            }
         }
-       
+
+        _handle = _job.Schedule();
+
     }
 
     private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
@@ -127,6 +135,27 @@ public class LibmapperDevice : MonoBehaviour
 
             return l;
         }
+    }
+}
+
+
+
+public struct PollJob : IJob
+{
+    [NativeDisableUnsafePtrRestriction] // it's probably still unsafe but I don't care
+    private readonly IntPtr _devicePtr;
+    private readonly int pollTime;
+
+    public PollJob(IntPtr devicePtr, int pollTime)
+    {
+        _devicePtr = devicePtr;
+        this.pollTime = pollTime;
+    }
+
+    public void Execute()
+    {
+        var device = new Device(_devicePtr);
+        device.Poll(pollTime);
     }
 }
 
