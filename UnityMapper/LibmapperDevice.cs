@@ -67,12 +67,13 @@ public class LibmapperDevice : MonoBehaviour
                 {
                     // the value was changed on the network, so we should update the local value
                     mapped.SetObject(value.Item1);
+                    lastChanged.Set(value.Item2);
                 }
                 else
                 {
                     // no remote updates have happened, so push our local value
                     signal.SetValue(mapped.GetValue());
-                    lastChanged.Set(signal.GetValue().Item2);
+                    lastChanged.Set(_device.GetTime());
                 }
             
             }
