@@ -13,11 +13,11 @@ public class LibmapperDevice : MonoBehaviour
     
     private Device _device;
 
-    private System.Collections.Generic.List<(Signal, MappedProperty)> properties = new();
+    private System.Collections.Generic.List<(Signal, MappedProperty)> _properties = [];
 
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
-    private System.Collections.Generic.List<Component> _componentsToExpose = new();
+    private System.Collections.Generic.List<Component> componentsToExpose = [];
     // Start is called before the first frame update
     void Start()
     {
@@ -25,18 +25,18 @@ public class LibmapperDevice : MonoBehaviour
     }
 
 
-    private bool lastReady = false;
+    private bool _lastReady = false;
     // Use physics update for consistent timing
     void FixedUpdate()
     {
         _device.Poll(1);
         
-        if (_device.GetIsReady() && !lastReady)
+        if (_device.GetIsReady() && !_lastReady)
         {
             Debug.Log("registering signals");
             // device just became ready
-            lastReady = true;
-            foreach (var component in _componentsToExpose)
+            _lastReady = true;
+            foreach (var component in componentsToExpose)
             {
                 var maps = CreateMapping(component);
                 
@@ -47,14 +47,14 @@ public class LibmapperDevice : MonoBehaviour
                     var type = CreateLibmapperTypeFromPrimitive(kind);
                     Debug.Log("Registered signal of type: " + type + " with length: " + mapped.GetVectorLength());
                     var signal = _device.AddSignal(Signal.Direction.Incoming, mapped.GetName(), mapped.GetVectorLength(), type);
-                    properties.Add((signal, mapped));
+                    _properties.Add((signal, mapped));
                     signal.SetValue(mapped.GetValue());
                 }
                 
             }
             
         }
-        foreach (var (signal, mapped) in properties)
+        foreach (var (signal, mapped) in _properties)
         {
             var value = signal.GetValue();
             if (value.Item1 != null)
