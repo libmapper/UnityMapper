@@ -1,3 +1,5 @@
+using Unity.Jobs;
+
 namespace UnityMapper;
 using System.Reflection;
 using Mapper;
@@ -20,12 +22,13 @@ public class LibmapperDevice : MonoBehaviour
     void Start()
     {
         _device = new Device("UNITY_" + gameObject.name);
+        InvokeRepeating(nameof(PollDevice), 0.05f, (pollTime / 1000.0f) * 2);
     }
 
 
     private bool _lastReady = false;
     // Use physics update for consistent timing
-    void FixedUpdate()
+    void PollDevice()
     {
         _device.Poll(pollTime);
         
@@ -50,7 +53,6 @@ public class LibmapperDevice : MonoBehaviour
                 }
                 
             }
-            
         }
         foreach (var (signal, mapped, lastChanged) in _properties)
         {
