@@ -13,8 +13,9 @@ public class LibmapperDevice : MonoBehaviour
     
     private Device _device;
 
-    private System.Collections.Generic.List<(Signal, MappedProperty)> _properties = [];
+    private System.Collections.Generic.List<(Signal, MappedProperty, Mapper.Time lastChanged)> _properties = [];
 
+    [SerializeField] private int pollTime = 10;
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
@@ -29,7 +30,7 @@ public class LibmapperDevice : MonoBehaviour
     // Use physics update for consistent timing
     void FixedUpdate()
     {
-        _device.Poll(1);
+        _device.Poll(pollTime);
         
         if (_device.GetIsReady() && !_lastReady)
         {
@@ -47,20 +48,29 @@ public class LibmapperDevice : MonoBehaviour
                     var type = CreateLibmapperTypeFromPrimitive(kind);
                     Debug.Log("Registered signal of type: " + type + " with length: " + mapped.GetVectorLength());
                     var signal = _device.AddSignal(Signal.Direction.Incoming, mapped.GetName(), mapped.GetVectorLength(), type);
-                    _properties.Add((signal, mapped));
+                    _properties.Add((signal, mapped, new Mapper.Time()));
                     signal.SetValue(mapped.GetValue());
                 }
                 
             }
             
         }
-        foreach (var (signal, mapped) in _properties)
+        foreach (var (signal, mapped, lastChanged) in _properties)
         {
             var value = signal.GetValue();
-            if (value.Item1 != null)
+            // check if the value has changed
+            if (value.Item2 > lastChanged)
             {
+                // the value was changed on the network, so we should update the local value
                 mapped.SetObject(value.Item1);
             }
+            else
+            {
+                // no remote updates have happened, so push our local value
+                signal.SetValue(mapped.GetValue());
+                lastChanged.Set(signal.GetValue().Item2);
+            }
+            
         }
        
     }
