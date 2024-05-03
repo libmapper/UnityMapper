@@ -24,7 +24,7 @@ public class LibmapperDevice : MonoBehaviour
     private PollJob _job;
     void Start()
     {
-        _device = new Device("UNITY_" + gameObject.name);
+        _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
     }
     

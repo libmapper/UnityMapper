@@ -42,6 +42,6 @@ class MappedClassField(FieldInfo info, object target) : MappedProperty
 
     public string GetName()
     {
-        return info.DeclaringType.Name + "." + info.Name;
+        return info.DeclaringType.Name + "/" + info.Name;
     }
 }
