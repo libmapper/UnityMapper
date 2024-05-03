@@ -5,7 +5,7 @@ namespace UnityMapper;
 /// <summary>
 /// An object encapsulating a property of a class that can be mapped to a signal.
 /// </summary>
-public interface MappedProperty
+public interface IMappedProperty
 {
     /// <summary>
     /// The vector size of this mapped property.
@@ -50,7 +50,7 @@ public interface MappedProperty
     string GetName();
 }
 
-class MappedClassField(FieldInfo info, object target) : MappedProperty
+class MappedClassField(FieldInfo info, object target) : IMappedProperty
 {
     public Type GetMappedType()
     {

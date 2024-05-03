@@ -13,7 +13,7 @@ public class LibmapperDevice : MonoBehaviour
     
     private Device _device;
 
-    private System.Collections.Generic.List<(Signal, MappedProperty, Mapper.Time lastChanged)> _properties = [];
+    private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
     [SerializeField] private int pollTime = 10;
     
@@ -109,11 +109,11 @@ public class LibmapperDevice : MonoBehaviour
     }
 
 
-    private static System.Collections.Generic.List<MappedProperty> CreateMapping(Component target)
+    private static System.Collections.Generic.List<IMappedProperty> CreateMapping(Component target)
     {
         if (target is Transform transformTarget)
         {
-            var l = new System.Collections.Generic.List<MappedProperty>();
+            var l = new System.Collections.Generic.List<IMappedProperty>();
             l.Add(new MappedPosition(transformTarget));
             l.Add(new MappedRotation(transformTarget));
             l.Add(new MappedScale(transformTarget));
@@ -124,7 +124,7 @@ public class LibmapperDevice : MonoBehaviour
             // generic mapping 
             var candidates = target.GetType().GetFields();
             Debug.Log("Extracting properties from " + target.GetType());
-            var l = new System.Collections.Generic.List<MappedProperty>();
+            var l = new System.Collections.Generic.List<IMappedProperty>();
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
@@ -153,7 +153,7 @@ public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob
     }
 }
 
-class MappedPosition(Transform transform) : MappedProperty
+class MappedPosition(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
@@ -180,7 +180,7 @@ class MappedPosition(Transform transform) : MappedProperty
         return "Position";
     }
 }
-class MappedScale(Transform transform) : MappedProperty
+class MappedScale(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
@@ -207,7 +207,7 @@ class MappedScale(Transform transform) : MappedProperty
         return "Scale";
     }
 }
-class MappedRotation(Transform transform) : MappedProperty
+class MappedRotation(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
