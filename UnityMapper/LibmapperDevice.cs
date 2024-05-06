@@ -17,16 +17,23 @@ public class LibmapperDevice : MonoBehaviour
     
     private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
     private readonly Dictionary<Type, ITypeMapper> _mappers = new();
+    private bool _frozen = false; // when frozen, no new extractors, mappers, or signals can be added
 
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
     [SerializeField] private int pollTime = 1;
+    
+    /// <summary>
+    /// Whether or not to wait for Freeze() to be called before processing signals.
+    /// </summary>
+    [SerializeField] private bool useApi = false;
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
     // Start is called before the first frame update
 
     private PollJob _job;
+    
     void Start()
     {
         _device = new Device(gameObject.name);
@@ -39,6 +46,11 @@ public class LibmapperDevice : MonoBehaviour
         RegisterTypeMapper(new Vector3Mapper());
         RegisterTypeMapper(new Vector2Mapper());
         RegisterTypeMapper(new QuaternionMapper());
+
+        if (!useApi)
+        {
+            _frozen = true;
+        }
     }
     
     
@@ -47,6 +59,8 @@ public class LibmapperDevice : MonoBehaviour
     // Use physics update for consistent timing
     void FixedUpdate()
     {
+        if (!_frozen) return; // wait until Freeze() is called to start polling
+        
         if (_handle != null)
         {
             _handle.Value.Complete();
@@ -122,6 +136,10 @@ public class LibmapperDevice : MonoBehaviour
     /// <typeparam name="T">Component type being targeted</typeparam>
     public void RegisterExtractor<T>(IPropertyExtractor<T> extractor) where T : Component
     {
+        if (_frozen)
+        {
+            throw new InvalidOperationException("Can't register new extractors after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+        }
         if (typeof(T) == typeof(Component))
         {
             throw new ArgumentException("Can't override generic extractor for Component type");
@@ -137,7 +155,33 @@ public class LibmapperDevice : MonoBehaviour
     /// <typeparam name="U">The primitive type</typeparam>
     public void RegisterTypeMapper<T, U>(ITypeMapper<T, U> mapper) where T : notnull where U : notnull
     {
+        if (_frozen)
+        {
+            throw new InvalidOperationException("Can't register new mappers after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+        }
         _mappers[typeof(T)] = mapper;
+    }
+    
+    /// <summary>
+    /// Add a new component to be exposed by the device. 
+    /// </summary>
+    /// <param name="component"></param>
+    /// <exception cref="InvalidOperationException">If called while the device is frozen</exception>
+    public void AddComponent(Component component)
+    {
+        if (_frozen)
+        {
+            throw new InvalidOperationException("Can't add new components after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+        }
+        componentsToExpose.Add(component);
+    }
+
+    /// <summary>
+    /// Freeze the device, preventing new extractors, mappers, or components from being added.
+    /// </summary>
+    public void Freeze()
+    {
+        _frozen = true;
     }
 
     private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
