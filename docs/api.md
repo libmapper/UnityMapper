@@ -15,7 +15,7 @@ The API is split up into multiple parts that can be used independently or togeth
 You may need to register both `TypeConverter` and `PropertyExtractor` to get the desired behavior. If you're not sure, have a look through
 the `Builtin` namespace to see how UnityMapper handles common Unity types.
 
-## Prerquisites
+## Prerequisites
 On your Libmapper Device component, check the "Use API" box. This will make the device inactive until you call `Freeze()`,
  allowing you to register new extensions before the device starts.
 
