@@ -3,7 +3,7 @@ using UnityMapper.API;
 
 namespace UnityMapper.Builtin;
 
-public class Vector3Mapper : ITypeMapper<Vector3, float[]>
+public class Vector3Converter : ITypeConverter<Vector3, float[]>
 {
     public float[] CreateSimple(Vector3 complex)
     {
@@ -18,7 +18,7 @@ public class Vector3Mapper : ITypeMapper<Vector3, float[]>
     public int VectorLength => 3;
 }
 
-public class Vector2Mapper : ITypeMapper<Vector2, float[]>
+public class Vector2Converter : ITypeConverter<Vector2, float[]>
 {
     public float[] CreateSimple(Vector2 complex)
     {
@@ -33,7 +33,7 @@ public class Vector2Mapper : ITypeMapper<Vector2, float[]>
     public int VectorLength => 2;
 }
 
-public class QuaternionMapper : ITypeMapper<Quaternion, float[]>
+public class QuaternionConverter : ITypeConverter<Quaternion, float[]>
 {
     public float[] CreateSimple(Quaternion complex)
     {

@@ -5,7 +5,7 @@ namespace UnityMapper.API;
 /// </summary>
 /// <typeparam name="T">Complex type</typeparam>
 /// <typeparam name="U">Primitive type, one of float, int, double, or an array</typeparam>
-public interface ITypeMapper<T, U> : ITypeMapper where T: notnull where U: notnull
+public interface ITypeConverter<T, U> : ITypeConverter where T: notnull where U: notnull
 
 {
     /// <summary>
@@ -23,7 +23,7 @@ public interface ITypeMapper<T, U> : ITypeMapper where T: notnull where U: notnu
     T CreateComplex(U simple);
     
     
-    object ITypeMapper.CreateSimpleObject(object complex)
+    object ITypeConverter.CreateSimpleObject(object complex)
     {
         if (!(complex is T))
         {
@@ -32,7 +32,7 @@ public interface ITypeMapper<T, U> : ITypeMapper where T: notnull where U: notnu
         return CreateSimple((T) complex);
     }
     
-    object ITypeMapper.CreateComplexObject(object simple)
+    object ITypeConverter.CreateComplexObject(object simple)
     {
         if (!(simple is U))
         {
@@ -41,15 +41,15 @@ public interface ITypeMapper<T, U> : ITypeMapper where T: notnull where U: notnu
         return CreateComplex((U) simple);
     }
     
-    Type ITypeMapper.ComplexType => typeof(T);
-    Type ITypeMapper.SimpleType => typeof(U);
+    Type ITypeConverter.ComplexType => typeof(T);
+    Type ITypeConverter.SimpleType => typeof(U);
 }
 
 
 /// <summary>
-/// Dynamic version of <see cref="ITypeMapper{T,U}"/>. Only useful for internal use.
+/// Dynamic version of <see cref="ITypeConverter{T,U}"/>. Only useful for internal use.
 /// </summary>
-public interface ITypeMapper
+public interface ITypeConverter
 {
     object CreateComplexObject(object simple);
     object CreateSimpleObject(object complex);

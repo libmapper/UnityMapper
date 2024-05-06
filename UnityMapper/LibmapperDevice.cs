@@ -16,7 +16,7 @@ public class LibmapperDevice : MonoBehaviour
     private Device _device;
     
     private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
-    private readonly Dictionary<Type, ITypeMapper> _mappers = new();
+    private readonly Dictionary<Type, ITypeConverter> _converters = new();
     private bool _frozen = false; // when frozen, no new extractors, mappers, or signals can be added
 
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
@@ -42,9 +42,9 @@ public class LibmapperDevice : MonoBehaviour
         RegisterExtractor(new TransformExtractor());
         
         // Builtin type converters
-        RegisterTypeMapper(new Vector3Mapper());
-        RegisterTypeMapper(new Vector2Mapper());
-        RegisterTypeMapper(new QuaternionMapper());
+        RegisterTypeConverter(new Vector3Converter());
+        RegisterTypeConverter(new Vector2Converter());
+        RegisterTypeConverter(new QuaternionConverter());
 
         RegisterExtensions();
         
@@ -88,7 +88,7 @@ public class LibmapperDevice : MonoBehaviour
 
                         if (type == Mapper.Type.Null)
                         {
-                            var mapper = _mappers[wrappedMap.GetMappedType()];
+                            var mapper = _converters[wrappedMap.GetMappedType()];
                             if (mapper == null)
                             {
                                 throw new ArgumentException("No mapper found for type: " + wrappedMap.GetMappedType());
@@ -154,18 +154,18 @@ public class LibmapperDevice : MonoBehaviour
     }
     
     /// <summary>
-    /// Register a type mapper for libmapper to automatically convert complex types into simple types.
+    /// Register a type converter for libmapper to automatically convert complex types into simple types.
     /// </summary>
-    /// <param name="mapper">A type mapper</param>
+    /// <param name="converter">A type mapper</param>
     /// <typeparam name="T">The complex type</typeparam>
     /// <typeparam name="U">The primitive type</typeparam>
-    public void RegisterTypeMapper<T, U>(ITypeMapper<T, U> mapper) where T : notnull where U : notnull
+    public void RegisterTypeConverter<T, U>(ITypeConverter<T, U> converter) where T : notnull where U : notnull
     {
         if (_frozen)
         {
-            throw new InvalidOperationException("Can't register new mappers after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+            throw new InvalidOperationException("Can't register new converters after Freeze(). Make sure \"Use API\" is checked in the inspector.");
         }
-        _mappers[typeof(T)] = mapper;
+        _converters[typeof(T)] = converter;
     }
     
     /// <summary>
@@ -230,13 +230,13 @@ public class LibmapperDevice : MonoBehaviour
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
-                if (baseType == Mapper.Type.Null && _mappers[prop.FieldType] == null) continue;
+                if (baseType == Mapper.Type.Null && _converters[prop.FieldType] == null) continue;
                 Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
                 var mapped = new MappedClassField(prop, target);
                 
                 if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
                 {
-                    var mapper = _mappers[prop.FieldType];
+                    var mapper = _converters[prop.FieldType];
                     l.Add(new WrappedMappedProperty(mapped, mapper));
                 }
                 else
@@ -250,26 +250,26 @@ public class LibmapperDevice : MonoBehaviour
     }
 }
 
-internal class WrappedMappedProperty(IMappedProperty inner, ITypeMapper mapper) : IMappedProperty
+internal class WrappedMappedProperty(IMappedProperty inner, ITypeConverter converter) : IMappedProperty
 {
     public int GetVectorLength()
     {
-        return mapper.VectorLength;
+        return converter.VectorLength;
     }
 
     public Type GetMappedType()
     {
-        return mapper.SimpleType;
+        return converter.SimpleType;
     }
 
     public void SetObject(object value)
     {
-        inner.SetObject(mapper.CreateComplexObject(value));
+        inner.SetObject(converter.CreateComplexObject(value));
     }
 
     public object GetValue()
     {
-        return mapper.CreateSimpleObject(inner.GetValue());
+        return converter.CreateSimpleObject(inner.GetValue());
     }
 
     public string GetName()
