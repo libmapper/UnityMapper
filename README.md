@@ -11,7 +11,7 @@ dotnet build
 ```
 The compiled DLL will be in the `bin/Debug` directory.
 
-To get an optimized DLL file for more serious use, use `dotnet build` instead:
+To get an optimized DLL file for more serious use, use `dotnet publish` instead:
 ```bash
 dotnet publish -c Release -o ./publish
 ```
