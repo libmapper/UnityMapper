@@ -54,6 +54,8 @@ public interface ITypeMapper
     object CreateComplexObject(object simple);
     object CreateSimpleObject(object complex);
     
+    int VectorLength { get; }
+    
     Type ComplexType { get; }
     Type SimpleType { get; }
 }
