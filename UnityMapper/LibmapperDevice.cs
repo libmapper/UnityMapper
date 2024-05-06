@@ -32,8 +32,13 @@ public class LibmapperDevice : MonoBehaviour
         _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
                 
-        // Builtins
+        // Builtin extractors
         RegisterExtractor(new TransformExtractor());
+        
+        // Builtin type converters
+        RegisterTypeMapper(new Vector3Mapper());
+        RegisterTypeMapper(new Vector2Mapper());
+        RegisterTypeMapper(new QuaternionMapper());
     }
     
     
