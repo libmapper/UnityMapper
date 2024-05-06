@@ -5,7 +5,7 @@ namespace UnityMapper.API;
 /// </summary>
 /// <typeparam name="T">Complex type</typeparam>
 /// <typeparam name="U">Primitive type, one of float, int, double, or an array</typeparam>
-public interface ITypeMapper<T, U> : ITypeMapper where T : class where U : class
+public interface ITypeMapper<T, U> : ITypeMapper where T: notnull where U: notnull
 
 {
     /// <summary>
