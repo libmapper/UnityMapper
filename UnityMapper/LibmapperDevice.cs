@@ -230,22 +230,24 @@ public class LibmapperDevice : MonoBehaviour
         {
             // generic mapping 
             var candidates = target.GetType().GetFields();
-            Debug.Log("Extracting properties from " + target.GetType());
+            Debug.Log("Extracting properties from " + target.GetType(), target);
             var l = new System.Collections.Generic.List<IMappedProperty>();
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
                 if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
                 var mapped = new MappedClassField(prop, target);
                 
                 if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
                 {
-                    var mapper = _converters[prop.FieldType];
-                    l.Add(new WrappedMappedProperty(mapped, mapper));
+                    
+                    var converter = _converters[prop.FieldType];
+                    Debug.Log("Extracting (wrapped) property: " + prop.Name + " of type: " + CreateLibmapperTypeFromPrimitive(converter.SimpleType) + " for libmapper.", target);
+                    l.Add(new WrappedMappedProperty(mapped, converter));
                 }
                 else
                 {
+                    Debug.Log("Extracting property: " + prop.Name + " of type: " + baseType + " for libmapper.", target);
                     l.Add(mapped);
                 }
             }
