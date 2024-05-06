@@ -30,7 +30,6 @@ public class LibmapperDevice : MonoBehaviour
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
-    // Start is called before the first frame update
 
     private PollJob _job;
     
