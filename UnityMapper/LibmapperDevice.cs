@@ -15,7 +15,8 @@ public class LibmapperDevice : MonoBehaviour
     
     private Device _device;
     
-    private Dictionary<Type, IPropertyExtractor> _extractors = new();
+    private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
+    private readonly Dictionary<Type, ITypeMapper> _mappers = new();
 
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
@@ -56,12 +57,31 @@ public class LibmapperDevice : MonoBehaviour
                     // TODO: this is REALLY ugly, fix later
                     foreach (var mapped in maps)
                     {
+                        var wrappedMap = mapped; // wrapped version to primitive-ize type
                         var kind = mapped.GetMappedType();
                         var type = CreateLibmapperTypeFromPrimitive(kind);
-                        Debug.Log("Registered signal of type: " + type + " with length: " + mapped.GetVectorLength());
-                        var signal = _device.AddSignal(Signal.Direction.Incoming, mapped.GetName(), mapped.GetVectorLength(), type);
-                        _properties.Add((signal, mapped, new Mapper.Time()));
-                        signal.SetValue(mapped.GetValue());
+
+                        if (type == Mapper.Type.Null)
+                        {
+                            var mapper = _mappers[wrappedMap.GetMappedType()];
+                            if (mapper == null)
+                            {
+                                throw new ArgumentException("No mapper found for type: " + wrappedMap.GetMappedType());
+                            }
+
+                            type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
+                            if (type == Mapper.Type.Null)
+                            {
+                                throw new ArgumentException("Mapper type is not a simple type: " + mapper.GetType());
+                            }
+                            
+                            wrappedMap = new WrappedMappedProperty(mapped, mapper);
+                        }
+                        
+                        Debug.Log("Registered signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
+                        var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type);
+                        _properties.Add((signal, wrappedMap, new Mapper.Time()));
+                        signal.SetValue(wrappedMap.GetValue());
                     }
                 
                 }
@@ -102,6 +122,17 @@ public class LibmapperDevice : MonoBehaviour
             throw new ArgumentException("Can't override generic extractor for Component type");
         }
         _extractors[typeof(T)] = extractor;
+    }
+    
+    /// <summary>
+    /// Register a type mapper for libmapper to automatically convert complex types into simple types.
+    /// </summary>
+    /// <param name="mapper">A type mapper</param>
+    /// <typeparam name="T">The complex type</typeparam>
+    /// <typeparam name="U">The primitive type</typeparam>
+    public void RegisterTypeMapper<T, U>(ITypeMapper<T, U> mapper) where T : notnull where U : notnull
+    {
+        _mappers[typeof(T)] = mapper;
     }
 
     private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
@@ -144,10 +175,19 @@ public class LibmapperDevice : MonoBehaviour
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
-                if (baseType == Mapper.Type.Null) continue;
+                if (baseType == Mapper.Type.Null && _mappers[prop.FieldType] == null) continue;
                 Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
                 var mapped = new MappedClassField(prop, target);
-                l.Add(mapped);
+                
+                if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
+                {
+                    var mapper = _mappers[prop.FieldType];
+                    l.Add(new WrappedMappedProperty(mapped, mapper));
+                }
+                else
+                {
+                    l.Add(mapped);
+                }
             }
 
             return l;
@@ -155,7 +195,33 @@ public class LibmapperDevice : MonoBehaviour
     }
 }
 
+internal class WrappedMappedProperty(IMappedProperty inner, ITypeMapper mapper) : IMappedProperty
+{
+    public int GetVectorLength()
+    {
+        return mapper.VectorLength;
+    }
 
+    public Type GetMappedType()
+    {
+        return mapper.SimpleType;
+    }
+
+    public void SetObject(object value)
+    {
+        inner.SetObject(mapper.CreateComplexObject(value));
+    }
+
+    public object GetValue()
+    {
+        return mapper.CreateSimpleObject(inner.GetValue());
+    }
+
+    public string GetName()
+    {
+        return inner.GetName();
+    }
+}
 
 public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob
 {
