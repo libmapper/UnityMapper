@@ -35,6 +35,9 @@ public class LibmapperDevice : MonoBehaviour
     
     public void Start()
     {
+        var tmp = _frozen;
+        _frozen = false; // in case another script called Freeze() before unity calls Start()
+        
         _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
                 
@@ -48,9 +51,11 @@ public class LibmapperDevice : MonoBehaviour
 
         RegisterExtensions();
         
+        _frozen = tmp; // restore previous frozen state;
+        
         if (!useApi)
         {
-            _frozen = true;
+            Freeze();
         }
     }
 
@@ -230,7 +235,7 @@ public class LibmapperDevice : MonoBehaviour
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
-                if (baseType == Mapper.Type.Null && _converters[prop.FieldType] == null) continue;
+                if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
                 Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
                 var mapped = new MappedClassField(prop, target);
                 
