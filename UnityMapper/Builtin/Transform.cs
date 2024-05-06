@@ -40,7 +40,7 @@ internal class MappedPosition(Transform transform) : IMappedProperty
 
     public string GetName()
     {
-        return "Position";
+        return "Transform/Position";
     }
 }
 internal class MappedScale(Transform transform) : IMappedProperty
@@ -67,7 +67,7 @@ internal class MappedScale(Transform transform) : IMappedProperty
 
     public string GetName()
     {
-        return "Scale";
+        return "Transform/Scale";
     }
 }
 internal class MappedRotation(Transform transform) : IMappedProperty
@@ -94,7 +94,7 @@ internal class MappedRotation(Transform transform) : IMappedProperty
 
     public string GetName()
     {
-        return "Rotation";
+        return "Transform/Rotation";
     }
 }
 
