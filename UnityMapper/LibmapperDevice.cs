@@ -33,7 +33,7 @@ public class LibmapperDevice : MonoBehaviour
 
     private PollJob _job;
     
-    void Start()
+    public void Start()
     {
         _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
@@ -46,10 +46,17 @@ public class LibmapperDevice : MonoBehaviour
         RegisterTypeMapper(new Vector2Mapper());
         RegisterTypeMapper(new QuaternionMapper());
 
+        RegisterExtensions();
+        
         if (!useApi)
         {
             _frozen = true;
         }
+    }
+
+    public virtual void RegisterExtensions()
+    {
+        
     }
     
     
