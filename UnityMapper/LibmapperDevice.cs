@@ -1,5 +1,7 @@
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using UnityMapper.API;
+using UnityMapper.Builtin;
 
 namespace UnityMapper;
 using System.Reflection;
@@ -12,6 +14,8 @@ public class LibmapperDevice : MonoBehaviour
 {
     
     private Device _device;
+    
+    private Dictionary<Type, IPropertyExtractor> _extractors = new();
 
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
@@ -82,6 +86,20 @@ public class LibmapperDevice : MonoBehaviour
         _handle = _job.Schedule();
 
     }
+    
+    /// <summary>
+    /// Register a property extractor for a specific component type.
+    /// </summary>
+    /// <param name="extractor">Object that will produce a list of properties when given a component</param>
+    /// <typeparam name="T">Component type being targeted</typeparam>
+    public void RegisterExtractor<T>(IPropertyExtractor<T> extractor) where T : Component
+    {
+        if (typeof(T) == typeof(Component))
+        {
+            throw new ArgumentException("Can't override generic extractor for Component type");
+        }
+        _extractors[typeof(T)] = extractor;
+    }
 
     private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
     {
@@ -103,21 +121,16 @@ public class LibmapperDevice : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("Unsupported type: " + t + " for libmapper mapping. Ignoring.");
             return Mapper.Type.Null;
         }
     }
 
 
-    private static System.Collections.Generic.List<IMappedProperty> CreateMapping(Component target)
+    private System.Collections.Generic.List<IMappedProperty> CreateMapping(Component target)
     {
-        if (target is Transform transformTarget)
+        if (_extractors.ContainsKey(target.GetType()))
         {
-            var l = new System.Collections.Generic.List<IMappedProperty>();
-            l.Add(new MappedPosition(transformTarget));
-            l.Add(new MappedRotation(transformTarget));
-            l.Add(new MappedScale(transformTarget));
-            return l;
+            return _extractors[target.GetType()].ExtractProperties(target);
         }
         else
         {
@@ -150,88 +163,6 @@ public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob
     {
         var device = new Device(_devicePtr);
         device.Poll(pollTime);
-    }
-}
-
-class MappedPosition(Transform transform) : IMappedProperty
-{
-    public void SetObject(object val)
-    {
-        var value = (Single[])val;
-        transform.position = new Vector3(value[0], value[1], value[2]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.position.x, transform.position.y, transform.position.z};
-    }
-
-    public Type GetMappedType()
-    {
-        return typeof(float[]);
-    }
-
-    public int GetVectorLength()
-    {
-        return 3;
-    }
-
-    public string GetName()
-    {
-        return "Position";
-    }
-}
-class MappedScale(Transform transform) : IMappedProperty
-{
-    public void SetObject(object val)
-    {
-        var value = (Single[])val;
-        transform.localScale = new Vector3(value[0], value[1], value[2]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.localScale.x, transform.localScale.y, transform.localScale.z};
-    }
-
-    public Type GetMappedType()
-    {
-        return typeof(float[]);
-    }
-
-    public int GetVectorLength()
-    {
-        return 3;
-    }
-
-    public string GetName()
-    {
-        return "Scale";
-    }
-}
-class MappedRotation(Transform transform) : IMappedProperty
-{
-    public void SetObject(object val)
-    {
-        var value = (Single[])val;
-        transform.rotation = new Quaternion(value[0], value[1], value[2], value[3]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w};
-    }
-
-    public Type GetMappedType()
-    {
-        return typeof(float[]);
-    }
-
-    public int GetVectorLength()
-    {
-        return 4;
-    }
-
-    public string GetName()
-    {
-        return "Rotation";
     }
 }
 
