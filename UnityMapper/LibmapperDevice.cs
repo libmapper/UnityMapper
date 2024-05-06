@@ -30,6 +30,9 @@ public class LibmapperDevice : MonoBehaviour
     {
         _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
+                
+        // Builtins
+        RegisterExtractor(new TransformExtractor());
     }
     
     
