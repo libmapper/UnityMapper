@@ -1,4 +1,5 @@
 using System.Reflection;
+using UnityEngine;
 
 namespace UnityMapper;
 
@@ -50,8 +51,18 @@ public interface IMappedProperty
     string GetName();
 }
 
-class MappedClassField(FieldInfo info, object target) : IMappedProperty
+/// <summary>
+/// Simple implementation of <see cref="IMappedProperty"/> for fields.
+///
+/// Uses reflection to get and set values. For more complex properties a custom implementation should be used.
+/// </summary>
+/// <param name="info">The target field</param>
+/// <param name="target">The component the field belongs to</param>
+public class MappedClassField(FieldInfo info, Component target) : IMappedProperty
 {
+    
+    // TODO: Add check to ensure info belongs to target
+    
     public Type GetMappedType()
     {
         return info.FieldType;
