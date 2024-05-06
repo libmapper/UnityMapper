@@ -22,10 +22,10 @@ public interface IMappedProperty
     /// Get the type that this property is mapped to.
     /// </summary>
     /// <remarks>
-    /// This doesn't have to be the underlying type of the property, but has to be either a float, int,
-    /// double, or an array of one of those.
+    /// This doesn't have to be the underlying type of the property, but if it is not a float, int,
+    /// double, or an array of one of those a type mapper will be used which may be less efficient.
     /// </remarks>
-    /// <returns>Either float, double, int, float[], double[], or int[]</returns>
+    /// <returns>The type that should be passed to SetObject and returned from GetValue</returns>
     Type GetMappedType();
     
     /// <summary>
