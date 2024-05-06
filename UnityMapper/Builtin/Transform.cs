@@ -16,7 +16,7 @@ public class TransformExtractor : IPropertyExtractor<Transform>
     }
 }
 
-class MappedPosition(Transform transform) : IMappedProperty
+internal class MappedPosition(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
@@ -43,7 +43,7 @@ class MappedPosition(Transform transform) : IMappedProperty
         return "Position";
     }
 }
-class MappedScale(Transform transform) : IMappedProperty
+internal class MappedScale(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
@@ -70,7 +70,7 @@ class MappedScale(Transform transform) : IMappedProperty
         return "Scale";
     }
 }
-class MappedRotation(Transform transform) : IMappedProperty
+internal class MappedRotation(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
     {
