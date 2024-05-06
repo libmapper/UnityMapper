@@ -72,7 +72,7 @@ public class LibmapperDevice : MonoBehaviour
             _handle.Value.Complete();
             if (_device.GetIsReady() && !_lastReady)
             {
-                Debug.Log("registering signals");
+                Debug.Log("Registering signals");
                 // device just became ready
                 _lastReady = true;
                 foreach (var component in componentsToExpose)
@@ -103,7 +103,7 @@ public class LibmapperDevice : MonoBehaviour
                             wrappedMap = new WrappedMappedProperty(mapped, mapper);
                         }
                         
-                        Debug.Log("Registered signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
+                        Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
                         var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type);
                         _properties.Add((signal, wrappedMap, new Mapper.Time()));
                         signal.SetValue(wrappedMap.GetValue());
