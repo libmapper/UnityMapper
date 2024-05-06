@@ -1,4 +1,5 @@
 using System.Reflection;
+using UnityEngine;
 
 namespace UnityMapper;
 
@@ -21,10 +22,10 @@ public interface IMappedProperty
     /// Get the type that this property is mapped to.
     /// </summary>
     /// <remarks>
-    /// This doesn't have to be the underlying type of the property, but has to be either a float, int,
-    /// double, or an array of one of those.
+    /// This doesn't have to be the underlying type of the property, but if it is not a float, int,
+    /// double, or an array of one of those a type mapper will be used which may be less efficient.
     /// </remarks>
-    /// <returns>Either float, double, int, float[], double[], or int[]</returns>
+    /// <returns>The type that should be passed to SetObject and returned from GetValue</returns>
     Type GetMappedType();
     
     /// <summary>
@@ -50,8 +51,18 @@ public interface IMappedProperty
     string GetName();
 }
 
-class MappedClassField(FieldInfo info, object target) : IMappedProperty
+/// <summary>
+/// Simple implementation of <see cref="IMappedProperty"/> for fields.
+///
+/// Uses reflection to get and set values. For more complex properties a custom implementation should be used.
+/// </summary>
+/// <param name="info">The target field</param>
+/// <param name="target">The component the field belongs to</param>
+public class MappedClassField(FieldInfo info, Component target) : IMappedProperty
 {
+    
+    // TODO: Add check to ensure info belongs to target
+    
     public Type GetMappedType()
     {
         return info.FieldType;

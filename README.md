@@ -18,4 +18,4 @@ dotnet publish -c Release -o ./publish
 
 
 ## Usage
-See [docs/usage.md](docs/usage.md)
+See [docs/usage.md](docs/usage.md) and [docs/api.md](docs/api.md)
