@@ -22,6 +22,7 @@ public class LibmapperDevice : MonoBehaviour
     private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
     [SerializeField] private int pollTime = 1;
+    [SerializeField] private bool nonBlockingPolling = false;
     
     /// <summary>
     /// Whether or not to wait for Freeze() to be called before processing signals.
@@ -72,9 +73,16 @@ public class LibmapperDevice : MonoBehaviour
     {
         if (!_frozen) return; // wait until Freeze() is called to start polling
         
-        if (_handle != null)
+        if (_handle != null || nonBlockingPolling)
         {
-            _handle.Value.Complete();
+            if (nonBlockingPolling)
+            {
+                _device.Poll();
+            }
+            else
+            {
+                _handle.Value.Complete();
+            }
             if (_device.GetIsReady() && !_lastReady)
             {
                 Debug.Log("Registering signals");
@@ -136,8 +144,10 @@ public class LibmapperDevice : MonoBehaviour
             }
         }
 
-        _handle = _job.Schedule();
-
+        if (!nonBlockingPolling)
+        {
+            _handle = _job.Schedule();
+        }
     }
     
     /// <summary>
