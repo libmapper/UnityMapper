@@ -8,7 +8,7 @@ Using the public API, you can tell UnityMapper how to look for properties on you
 The API is split up into multiple parts that can be used independently or together. To figure out what you need to do, consult the following steps:
 1. Is my only problem a custom type that UnityMapper can't use?
     - If yes, you want to register a `TypeConverter` to tell UnityMapper how to convert your type into a primitive.
-    - If your type can't be directly mapped, or it doesn't make semantic sense to only have one signal representing it, read on.
+    - If your type can't be directly converted, or it doesn't make semantic sense to only have one signal representing it, read on.
 2. Is my problem that UnityMapper isn't discovering all the properties available on my component?
     - If yes, you want to register a `PropertyExtractor` to tell UnityMapper how to find the properties you want to expose.
 
@@ -113,7 +113,7 @@ internal class MappedPosition(Transform transform) : IMappedProperty
 }
 ```
 Note that this implementation is actually different from the one in the source code. The real implementation actually maps directly to a `float[]`,
-instead of letting UnityMapper do the additional step of converting the `Vector3`. This is a bit faster in practice, but you can likely just use a built-in or custom type mapper
+instead of letting UnityMapper do the additional step of converting the `Vector3`. This is a bit faster in practice, but you can likely just use a built-in or custom type converter
 unless your property is performance-critical.
 
 Hopefully, in the [future](https://github.com/EggAllocationService/libmapper-unity/issues/5), UnityMapper will be able to generate classes implementing IMappedProperty for you.
