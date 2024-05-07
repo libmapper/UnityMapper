@@ -58,7 +58,12 @@ public class LibmapperDevice : MonoBehaviour
             Freeze();
         }
     }
-
+    
+    /// <summary>
+    /// Called before the device is frozen, allowing for custom extractors, mappers, and signals to be registered.
+    /// Overriding this method is an alternative to obtaining a reference to the device and calling
+    /// RegisterExtractor, RegisterTypeConverter, and AddComponent manually.
+    /// </summary>
     public virtual void RegisterExtensions()
     {
         
