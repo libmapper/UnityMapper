@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Reflection.Emit;
 using UnityEngine;
 
 namespace UnityMapper;
@@ -136,4 +137,98 @@ public class SignalBoundsAttribute(float min, float max) : Attribute
 {
     public float Min { get; } = min;
     public float Max { get; } = max;
+}
+
+/// <summary>
+/// Implementation of IMappedProperty that uses runtime code generation to improve performance.
+/// </summary>
+public class RCGClassField : IMappedProperty
+{
+    
+    private delegate void SetObjectDelegate(object target, object value);
+    private delegate object GetValueDelegate(object target);
+    
+    private object _target;
+    private FieldInfo _info;
+    private SetObjectDelegate _setter;
+    private GetValueDelegate _getter;
+
+    public RCGClassField(FieldInfo info, Component target)
+    {
+        _target = target;
+        _info = info;
+        _setter = CreateSetter();
+        _getter = CreateGetter();
+    }
+
+    public Type GetMappedType()
+    {
+        return _info.FieldType;
+    }
+
+    public void SetObject(object value)
+    {
+        _setter(_target, value);
+    }
+
+    public object GetValue()
+    {
+        return _getter(_target);
+    }
+
+    public string GetName()
+    {
+        return _info.DeclaringType.Name + "/" + _info.Name;
+    }
+
+    private GetValueDelegate CreateGetter()
+    {
+        var d = new DynamicMethod($"Get{_info.Name}_Generated", typeof(object), new[] {typeof(object)}, _info.DeclaringType);
+        var il = d.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0); // "this"
+        il.Emit(OpCodes.Castclass, _info.DeclaringType); // cast to the declaring type
+        il.Emit(OpCodes.Ldfld, _info); // "this".{_info}
+        if (_info.FieldType.IsValueType) // box it if it's a value type
+        {
+            il.Emit(OpCodes.Box, _info.FieldType);
+        }
+        il.Emit(OpCodes.Ret); // return the value
+        return (GetValueDelegate) d.CreateDelegate(typeof(GetValueDelegate));
+    }
+    
+    private SetObjectDelegate CreateSetter()
+    {
+        var d = new DynamicMethod($"Set{_info.Name}_Generated", typeof(void), new[] {typeof(object), typeof(object)}, _info.DeclaringType);
+        var il = d.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0); // "this"
+        il.Emit(OpCodes.Castclass, _info.DeclaringType); // cast to the declaring type
+        il.Emit(OpCodes.Ldarg_1); // value
+        if (_info.FieldType.IsValueType) // unbox it if it's a value type
+        {
+            il.Emit(OpCodes.Unbox_Any, _info.FieldType);
+        }
+        il.Emit(OpCodes.Stfld, _info); // "this".{_info} = value
+        il.Emit(OpCodes.Ret); // return
+        return (SetObjectDelegate) d.CreateDelegate(typeof(SetObjectDelegate));
+    }
+    public string? Units
+    {
+        get {
+            var attr = _info.GetCustomAttribute<SignalUnitAttribute>();
+            return attr?.Units;
+        }
+    }
+    
+    public (float min, float max)? Bounds
+    {
+        get
+        {
+            var attr = _info.GetCustomAttribute<SignalBoundsAttribute>();
+            if (attr == null)
+            {
+                return null;
+            }
+            return (attr.Min, attr.Max);
+        }
+    }
 }

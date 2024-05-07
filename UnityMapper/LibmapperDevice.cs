@@ -253,8 +253,7 @@ public class LibmapperDevice : MonoBehaviour
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
                 if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
-                var mapped = new MappedClassField(prop, target);
+                var mapped = new RCGClassField(prop, target);
                 
                 if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
                 {
