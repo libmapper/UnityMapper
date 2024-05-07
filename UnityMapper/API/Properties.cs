@@ -140,7 +140,9 @@ public class SignalBoundsAttribute(float min, float max) : Attribute
 }
 
 /// <summary>
-/// Implementation of IMappedProperty that uses runtime code generation to improve performance.
+/// Implementation of <see cref="IMappedProperty"/> that uses runtime code generation to improve performance.
+///
+/// Roughly 5x faster than <see cref="MappedClassField"/>, but has potential issues on iOS.
 /// </summary>
 public class RCGClassField : IMappedProperty
 {
