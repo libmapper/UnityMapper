@@ -147,20 +147,20 @@ public class SignalBoundsAttribute(float min, float max) : Attribute
 public class RCGClassField : IMappedProperty
 {
     
-    private delegate void SetObjectDelegate(object target, object value);
-    private delegate object GetValueDelegate(object target);
+    public delegate void SetObjectDelegate(object target, object value);
+    public delegate object GetValueDelegate(object target);
     
     private object _target;
     private FieldInfo _info;
     private SetObjectDelegate _setter;
     private GetValueDelegate _getter;
 
-    public RCGClassField(FieldInfo info, Component target)
+    public RCGClassField(object target, FieldInfo info, SetObjectDelegate setter, GetValueDelegate getter)
     {
         _target = target;
         _info = info;
-        _setter = CreateSetter();
-        _getter = CreateGetter();
+        _setter = setter;
+        _getter = getter;
     }
 
     public Type GetMappedType()
@@ -183,7 +183,7 @@ public class RCGClassField : IMappedProperty
         return _info.DeclaringType.Name + "/" + _info.Name;
     }
 
-    private GetValueDelegate CreateGetter()
+    public static GetValueDelegate CreateGetter(FieldInfo _info)
     {
         var d = new DynamicMethod($"Get{_info.Name}_Generated", typeof(object), new[] {typeof(object)}, _info.DeclaringType);
         var il = d.GetILGenerator();
@@ -195,10 +195,12 @@ public class RCGClassField : IMappedProperty
             il.Emit(OpCodes.Box, _info.FieldType);
         }
         il.Emit(OpCodes.Ret); // return the value
+        
+        Debug.Log("Compiled getter for " + _info.Name);
         return (GetValueDelegate) d.CreateDelegate(typeof(GetValueDelegate));
     }
     
-    private SetObjectDelegate CreateSetter()
+    public static SetObjectDelegate CreateSetter(FieldInfo _info)
     {
         var d = new DynamicMethod($"Set{_info.Name}_Generated", typeof(void), new[] {typeof(object), typeof(object)}, _info.DeclaringType);
         var il = d.GetILGenerator();
@@ -211,6 +213,7 @@ public class RCGClassField : IMappedProperty
         }
         il.Emit(OpCodes.Stfld, _info); // "this".{_info} = value
         il.Emit(OpCodes.Ret); // return
+        Debug.Log("Compiled setter for " + _info.Name);
         return (SetObjectDelegate) d.CreateDelegate(typeof(SetObjectDelegate));
     }
     public string? Units

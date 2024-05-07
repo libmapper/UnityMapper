@@ -24,10 +24,14 @@ public class LibmapperDevice : MonoBehaviour
     [SerializeField] private int pollTime = 1;
     [SerializeField] private bool nonBlockingPolling = false;
     
+    [SerializeField] private bool useJIT = false;
+    
     /// <summary>
     /// Whether or not to wait for Freeze() to be called before processing signals.
     /// </summary>
     [SerializeField] private bool useApi = false;
+    
+    private static Dictionary<FieldInfo, (RCGClassField.SetObjectDelegate, RCGClassField.GetValueDelegate)> _rcgCache = new();
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
@@ -212,6 +216,16 @@ public class LibmapperDevice : MonoBehaviour
         _frozen = true;
     }
 
+    public System.Collections.Generic.List<Signal> GetSignals()
+    {
+        return _properties.Select(t => t.Item1).ToList();
+    }
+
+    private void OnApplicationQuit()
+    {
+        _rcgCache.Clear();
+    }
+
     private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
     {
         if (t.IsArray)
@@ -253,7 +267,19 @@ public class LibmapperDevice : MonoBehaviour
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
                 if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                var mapped = new RCGClassField(prop, target);
+                IMappedProperty mapped;
+                if (useJIT)
+                {
+                    if (!_rcgCache.ContainsKey(prop))
+                    {
+                        _rcgCache[prop] = (RCGClassField.CreateSetter(prop), RCGClassField.CreateGetter(prop));
+                    }
+                    mapped = new RCGClassField(target, prop, _rcgCache[prop].Item1, _rcgCache[prop].Item2);
+                }
+                else
+                {
+                    mapped = new MappedClassField(prop, target);
+                }
                 
                 if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
                 {
