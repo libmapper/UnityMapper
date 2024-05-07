@@ -1484,7 +1484,7 @@ namespace Mapper
         private static extern int mpr_dev_get_is_ready(IntPtr dev);
         public bool GetIsReady()
         {
-            return mpr_dev_get_is_ready(this._obj) == 0;
+            return mpr_dev_get_is_ready(this._obj) == 1;
         }
 
         [DllImport("mapper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.StdCall)]
