@@ -34,9 +34,11 @@ so you could have one libmapper device for your entire scene or one per object, 
 To get started, simply drag a component onto the list's title to automatically have it added. At the moment, the
 following components have special handling:
 - `Transform`: Maps to two three-component vectors for location and scale, and one four-component vector for rotation (Quaternion).
+- `Camera`: Provides a single float for the camera's field of view.
+- `AudioSource`: Provides two floats for the volume and pitch of the audio source.
+- `Light`: Provides a three-component vector for the light's RGB color and a float for the intensity (candelas).
 
-In [the future](https://github.com/EggAllocationService/libmapper-unity/issues/3), you will be able to add your own special handling
-for your components.
+You can add your own behavior to this list or override existing behavior, see [api.md](api.md) for more information.
 
 #### Property Discovery
 
