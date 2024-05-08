@@ -47,3 +47,32 @@ public class QuaternionConverter : ITypeConverter<Quaternion, float[]>
 
     public int VectorLength => 4;
 }
+
+public class ColorConverter : ITypeConverter<Color, float[]>
+{
+    public int VectorLength => 4;
+    public float[] CreateSimple(Color complex)
+    {
+        return new float[] {complex.r, complex.g, complex.b, complex.a};
+    }
+
+    public Color CreateComplex(float[] simple)
+    {
+        return new Color(simple[0], simple[1], simple[2], simple[3]);
+    }
+}
+
+public class BoolConverter : ITypeConverter<bool, int>
+{
+    public int VectorLength => 1;
+    
+    public int CreateSimple(bool value)
+    {
+        return value ? 1 : 0;
+    }
+
+    public bool CreateComplex(int simple)
+    {
+        return simple >= 1;
+    }
+}

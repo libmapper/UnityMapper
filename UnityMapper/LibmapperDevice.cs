@@ -49,6 +49,8 @@ public class LibmapperDevice : MonoBehaviour
         RegisterTypeConverter(new Vector3Converter());
         RegisterTypeConverter(new Vector2Converter());
         RegisterTypeConverter(new QuaternionConverter());
+        RegisterTypeConverter(new ColorConverter());
+        RegisterTypeConverter(new BoolConverter());
 
         RegisterExtensions();
         
