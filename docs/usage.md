@@ -23,6 +23,8 @@ The component exposes a few properties:
 - `Poll Time`: The amount of time in milliseconds that libmapper will poll for events at once.
    The value you want depends on your target framerate and what your fixed timestep is set to. 1 ms is a good starting point.
 - `Exposed Components`: The real meat and potatos of the  component, explained below:
+- `Non Blocking Polling`: Use libmapper's non-blocking polling feature on the main thread instead of scheduling a job. `Poll Time`
+   will be ignored if this is enabled. Note that this seems to have some latency variation issues that are being investigated.
 
 ### Exposed Components
 This is an array containing a list of components libmapper should inspect to find exposed properties that will be
