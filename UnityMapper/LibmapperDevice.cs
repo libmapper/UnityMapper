@@ -46,6 +46,7 @@ public class LibmapperDevice : MonoBehaviour
         RegisterExtractor(new TransformExtractor());
         RegisterExtractor(new AudioSourceExtractor());
         RegisterExtractor(new CameraExtractor());
+        RegisterExtractor(new LightExtractor());
         
         // Builtin type converters
         RegisterTypeConverter(new Vector3Converter());
