@@ -49,6 +49,17 @@ public interface IMappedProperty
     /// </remarks>
     /// <returns>A human readable name without spaces</returns>
     string GetName();
+
+    /// <summary>
+    /// The units that will be displayed in applications like webmapper.
+    /// Using null will omit that metadata.
+    /// </summary>
+    string? Units { get; }
+    
+    /// <summary>
+    /// The numerical bounds of the property. Use null if the property is unbounded.
+    /// </summary>
+    (float min, float max)? Bounds { get; }
 }
 
 /// <summary>
@@ -82,4 +93,47 @@ public class MappedClassField(FieldInfo info, Component target) : IMappedPropert
     {
         return info.DeclaringType.Name + "/" + info.Name;
     }
+
+    public string? Units
+    {
+        get {
+            var attr = info.GetCustomAttribute<SignalUnitAttribute>();
+            return attr?.Units;
+        }
+    }
+    
+    public (float min, float max)? Bounds
+    {
+        get
+        {
+            var attr = info.GetCustomAttribute<SignalBoundsAttribute>();
+            if (attr == null)
+            {
+                return null;
+            }
+            return (attr.Min, attr.Max);
+        }
+    }
+}
+
+/// <summary>
+/// Indicates to UnityMapper the units to be associated with a signal.
+/// Only used by the reflection-based property extractor.
+/// </summary>
+/// <param name="units">Human-readable unit for this signal</param>
+public class SignalUnitAttribute(string units) : Attribute
+{
+    public string Units { get; } = units;
+}
+
+/// <summary>
+/// Indicates to UnityMapper the bounds to be associated with a signal.
+/// Only used by the reflection-based property extractor.
+/// </summary>
+/// <param name="min">Lower bound</param>
+/// <param name="max">Upper bound</param>
+public class SignalBoundsAttribute(float min, float max) : Attribute
+{
+    public float Min { get; } = min;
+    public float Max { get; } = max;
 }
