@@ -288,6 +288,9 @@ internal class WrappedMappedProperty(IMappedProperty inner, ITypeConverter conve
     {
         return inner.GetName();
     }
+    
+    public string? Units => inner.Units;
+    public (float min, float max)? Bounds => inner.Bounds;
 }
 
 public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob

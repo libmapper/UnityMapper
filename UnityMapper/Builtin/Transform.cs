@@ -42,6 +42,9 @@ internal class MappedPosition(Transform transform) : IMappedProperty
     {
         return "Transform/Position";
     }
+    
+    public string? Units => "m";
+    public (float min, float max)? Bounds => null;
 }
 internal class MappedScale(Transform transform) : IMappedProperty
 {
@@ -69,7 +72,10 @@ internal class MappedScale(Transform transform) : IMappedProperty
     {
         return "Transform/Scale";
     }
+    public string? Units => null;
+    public (float min, float max)? Bounds => null;
 }
+
 internal class MappedRotation(Transform transform) : IMappedProperty
 {
     public void SetObject(object val)
@@ -96,5 +102,8 @@ internal class MappedRotation(Transform transform) : IMappedProperty
     {
         return "Transform/Rotation";
     }
+
+    public string? Units => null;
+    public (float min, float max)? Bounds => (-1.0f, 1.0f);
 }
 
