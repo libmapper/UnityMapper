@@ -117,7 +117,14 @@ public class LibmapperDevice : MonoBehaviour
                         }
                         
                         Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
-                        var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type);
+                        var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type, wrappedMap.Units!);
+                        if (wrappedMap.Bounds != null)
+                        {
+                            var bounds = wrappedMap.Bounds.Value;
+                            signal.SetProperty(Property.Min, bounds.min);
+                            signal.SetProperty(Property.Max, bounds.max);
+                        }
+                        
                         _properties.Add((signal, wrappedMap, new Mapper.Time()));
                         signal.SetValue(wrappedMap.GetValue());
                     }
