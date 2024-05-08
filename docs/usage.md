@@ -59,4 +59,13 @@ public float[] myArray = new float[3]; // good
 public float[] myArray; // bad, libmapper can't infer vector size
 ```
 
+### Metadata
+Libmapper supports adding metadata to your signals, namely a unit and minimum/maximum bounds. If using a custom `PropertyExtractor`, implement
+the getters for `Unit` and `Bounds` on your `IMappedProperty` to add metadata to your signals.
+
+If you're using the reflection-based property extractor (the default), you can use the `SignalUnit` and `SignalBounds` attributes to add metadata to your signals. For example:
+```csharp
+    [SignalUnit("degrees"), SignalBounds(0f, 360f)]
+    public float hue = 0.0f;
+```
 
