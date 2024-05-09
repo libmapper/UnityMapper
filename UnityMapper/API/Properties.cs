@@ -4,12 +4,12 @@ using UnityEngine;
 namespace UnityMapper;
 
 /// <summary>
-/// An object encapsulating a property of a class that can be mapped to a signal.
+/// An object encapsulating a property of a class that can be exposed as a signal.
 /// </summary>
-public interface IMappedProperty
+public interface IAccessibleProperty
 {
     /// <summary>
-    /// The vector size of this mapped property.
+    /// The vector size of this property.
     /// If > 1, T should be an array of a supported primitive;
     /// </summary>
     /// <returns>An integer >= 1</returns>
@@ -19,36 +19,38 @@ public interface IMappedProperty
     }
 
     /// <summary>
-    /// Get the type that this property is mapped to.
+    /// Get the type that this property is mapped to. This type will be passed to SetObject and returned from GetValue.
     /// </summary>
     /// <remarks>
     /// This doesn't have to be the underlying type of the property, but if it is not a float, int,
     /// double, or an array of one of those a type mapper will be used which may be less efficient.
     /// </remarks>
-    /// <returns>The type that should be passed to SetObject and returned from GetValue</returns>
-    Type GetMappedType();
+    Type BackingType { get;}
     
     /// <summary>
     /// Called by libmapper to update the value of the property.
     /// </summary>
+    /// <param name="target">The object to set the property on</param>
     /// <param name="value">An object, guaranteed to be the same type that is returned by <see cref="GetMappedType"/> </param>
-    void SetObject(object value);
+    void SetObject(object target, object value);
     
     /// <summary>
     /// Called by libmapper to get the current value of this property.
     /// </summary>
+    /// <param name="target">Component to get the property from</param>
     /// <returns>An object of the same type returned by <see cref="GetMappedType"/>. If the type is different, an exception will be thrown.</returns>
-    object GetValue();
+    object GetValue(object target);
 
     /// <summary>
     /// Used to name the corresponding signal in the libmapper graph. 
     /// </summary>
     /// <remarks>
-    /// The name should not contain spaces, and should be properly namespaced to be unique.
-    /// You can use `/` to create a nested heirarchy.
+    /// <list type="bullet">
+    /// <item><description>Names should be unique within a device.</description></item>
+    /// <item><description>Names should be human-readable and descriptive.</description></item>
+    /// </list>
     /// </remarks>
-    /// <returns>A human readable name without spaces</returns>
-    string GetName();
+    string Name { get; }
 
     /// <summary>
     /// The units that will be displayed in applications like webmapper.
@@ -62,37 +64,59 @@ public interface IMappedProperty
     (float min, float max)? Bounds { get; }
 }
 
+public interface IAccessibleProperty<TComponent, TProperty> : IAccessibleProperty where TProperty : notnull
+{
+
+    void IAccessibleProperty.SetObject(object target, object value)
+    {
+        if (!(target is TComponent))
+        {
+            throw new ArgumentException("Target is not of the correct type", nameof(target));
+        }
+        if (!(value is TProperty))
+        {
+            throw new ArgumentException("Value is not of the correct type", nameof(value));
+        }
+        Set((TComponent) target, (TProperty) value);
+    }
+    
+    object IAccessibleProperty.GetValue(object target)
+    {
+        if (target is not TComponent)
+        {
+            throw new ArgumentException("Target is not of the correct type", nameof(target));
+        }
+        return Get((TComponent) target);
+    }
+    
+    void Set(TComponent target, TProperty value);
+    TProperty Get(TComponent target);
+    
+    Type IAccessibleProperty.BackingType => typeof(TProperty);
+}
+
 /// <summary>
-/// Simple implementation of <see cref="IMappedProperty"/> for fields.
+/// Simple implementation of <see cref="IAccessibleProperty"/> for fields.
 ///
 /// Uses reflection to get and set values. For more complex properties a custom implementation should be used.
 /// </summary>
 /// <param name="info">The target field</param>
 /// <param name="target">The component the field belongs to</param>
-public class MappedClassField(FieldInfo info, Component target) : IMappedProperty
+public class AccessibleClassField(FieldInfo info) : IAccessibleProperty
 {
-    
-    // TODO: Add check to ensure info belongs to target
-    
-    public Type GetMappedType()
-    {
-        return info.FieldType;
-    }
-
-    public void SetObject(object value)
+    public void SetObject(object target, object value)
     {
         info.SetValue(target, value);
     }
 
-    public object GetValue()
+    public object GetValue(object target)
     {
         return info.GetValue(target);
     }
-
-    public string GetName()
-    {
-        return info.DeclaringType.Name + "/" + info.Name;
-    }
+    
+    public string Name => info.DeclaringType.Name + "/" + info.Name;
+    
+    public Type BackingType => info.FieldType;
 
     public string? Units
     {

@@ -240,32 +240,25 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     }
 }
 
-internal class WrappedMappedProperty(IMappedProperty inner, ITypeConverter converter) : IMappedProperty
+internal class WrappedAccessibleProperty(IAccessibleProperty inner, ITypeConverter converter) : IAccessibleProperty
 {
     public int GetVectorLength()
     {
         return converter.VectorLength;
     }
-
-    public Type GetMappedType()
+    
+    public void SetObject(object target, object value)
     {
-        return converter.SimpleType;
+        inner.SetObject(target, converter.CreateComplexObject(value));
     }
 
-    public void SetObject(object value)
+    public object GetValue(object target)
     {
-        inner.SetObject(converter.CreateComplexObject(value));
+        return converter.CreateSimpleObject(inner.GetValue(target));
     }
 
-    public object GetValue()
-    {
-        return converter.CreateSimpleObject(inner.GetValue());
-    }
-
-    public string GetName()
-    {
-        return inner.GetName();
-    }
+    public string Name => inner.Name;
+    public Type BackingType => converter.SimpleType;
 
     public string? Units => inner.Units;
     public (float min, float max)? Bounds => inner.Bounds;

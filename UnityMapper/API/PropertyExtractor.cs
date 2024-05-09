@@ -16,9 +16,9 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
     /// </summary>
     /// <param name="component">Provided component</param>
     /// <returns></returns>
-    List<IMappedProperty> ExtractProperties(T component);
+    List<IAccessibleProperty> ExtractProperties(T component);
     
-    List<IMappedProperty> IPropertyExtractor.ExtractProperties(Component component)
+    List<IAccessibleProperty> IPropertyExtractor.ExtractProperties(Component component)
     {
         if (!(component is T))
         {
@@ -31,6 +31,6 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
 
 public interface IPropertyExtractor
 {
-    List<IMappedProperty> ExtractProperties(Component component);
+    List<IAccessibleProperty> ExtractProperties(Component component);
     Type ComponentType { get; }
 }

@@ -5,9 +5,9 @@ namespace UnityMapper.Builtin;
 
 public class CameraExtractor : IPropertyExtractor<Camera> 
 {
-    public List<IMappedProperty> ExtractProperties(Camera component)
+    public List<IAccessibleProperty> ExtractProperties(Camera component)
     {
-        List<IMappedProperty> list = [new FieldOfViewProperty(component)];
+        List<IAccessibleProperty> list = [new FieldOfViewProperty(component)];
         if (component.usePhysicalProperties)
         {
             // TODO: Add physical properties
@@ -18,7 +18,7 @@ public class CameraExtractor : IPropertyExtractor<Camera>
     }
 }
 
-public class FieldOfViewProperty(Camera component) : IMappedProperty
+public class FieldOfViewProperty(Camera component) : IAccessibleProperty
 {
     public Type GetMappedType()
     {

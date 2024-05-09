@@ -5,13 +5,13 @@ namespace UnityMapper.Builtin;
 
 public class AudioSourceExtractor : IPropertyExtractor<AudioSource>
 {
-    public List<IMappedProperty> ExtractProperties(AudioSource component)
+    public List<IAccessibleProperty> ExtractProperties(AudioSource component)
     {
         return [new VolumeProperty(component), new PitchProperty(component)];
     }
 }
 
-internal class VolumeProperty(AudioSource component) : IMappedProperty
+internal class VolumeProperty(AudioSource component) : IAccessibleProperty
 {
     public Type GetMappedType()
     {
@@ -37,7 +37,7 @@ internal class VolumeProperty(AudioSource component) : IMappedProperty
     public (float min, float max)? Bounds => (0.0f, 1.0f);
 }
 
-internal class PitchProperty(AudioSource component) : IMappedProperty
+internal class PitchProperty(AudioSource component) : IAccessibleProperty
 {
     public Type GetMappedType()
     {
