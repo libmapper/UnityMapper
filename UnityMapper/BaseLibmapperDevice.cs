@@ -10,10 +10,11 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Type = System.Type;
 
-public class BaseLibmapperDevice : MonoBehaviour
+public abstract class BaseLibmapperDevice : MonoBehaviour
 {
     
     protected Device Device;
+    protected ulong InstanceId = 0;
     
     private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
@@ -97,7 +98,7 @@ public class BaseLibmapperDevice : MonoBehaviour
             }
             foreach (var (signal, mapped, lastChanged) in _properties)
             {
-                var value = signal.GetValue();
+                var value = signal.GetValue(InstanceId);
                 // check if the value has changed
                 if (value.Item2 > lastChanged)
                 {
@@ -108,10 +109,9 @@ public class BaseLibmapperDevice : MonoBehaviour
                 else
                 {
                     // no remote updates have happened, so push our local value
-                    signal.SetValue(mapped.GetValue());
+                    signal.SetValue(mapped.GetValue(), InstanceId);
                     lastChanged.Set(Device.GetTime());
                 }
-            
             }
         }
         else
