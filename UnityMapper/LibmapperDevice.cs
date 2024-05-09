@@ -1,3 +1,4 @@
+using System.Reflection.Emit;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityMapper.API;
@@ -31,7 +32,7 @@ public class LibmapperDevice : MonoBehaviour
     /// </summary>
     [SerializeField] private bool useApi = false;
     
-    private static Dictionary<FieldInfo, (RCGClassField.SetObjectDelegate, RCGClassField.GetValueDelegate)> _rcgCache = new();
+    private static Dictionary<Type, Dictionary<FieldInfo, Type>> _rcgCache = new();
     
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
@@ -259,41 +260,63 @@ public class LibmapperDevice : MonoBehaviour
         }
         else
         {
-            // generic mapping 
-            var candidates = target.GetType().GetFields();
-            Debug.Log("Extracting properties from " + target.GetType());
-            var l = new System.Collections.Generic.List<IMappedProperty>();
-            foreach (var prop in candidates)
+            if (!useJIT) return GetGeneric(target);
+            if (!_rcgCache.ContainsKey(target.GetType()))
             {
-                var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
-                if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                IMappedProperty mapped;
-                if (useJIT)
+                Debug.Log("Compiling accessors for " + target.GetType().Name);
+                var assemblyName = new AssemblyName("UnityMapper.Generated_" + target.GetType().Name);
+                var assembly = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.RunAndCollect);
+                var module = assembly.DefineDynamicModule("UnityMapper.Generated_" + target.GetType().Name);
+                var candidates = target.GetType().GetFields();
+                var results = new Dictionary<FieldInfo, Type>();
+                foreach (var candidate in candidates)
                 {
-                    if (!_rcgCache.ContainsKey(prop))
-                    {
-                        _rcgCache[prop] = (RCGClassField.CreateSetter(prop), RCGClassField.CreateGetter(prop));
-                    }
-                    mapped = new RCGClassField(target, prop, _rcgCache[prop].Item1, _rcgCache[prop].Item2);
+                    var accessorType = AccessorGenerator.CreateAccessor(candidate, module);
+                    Debug.Log("Compiled accessor for field " + candidate.Name + " on type " + accessorType);
+                    results[candidate] = accessorType;
                 }
-                else
-                {
-                    mapped = new MappedClassField(prop, target);
-                }
-                
-                if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
-                {
-                    var mapper = _converters[prop.FieldType];
-                    l.Add(new WrappedMappedProperty(mapped, mapper));
-                }
-                else
-                {
-                    l.Add(mapped);
-                }
+
+                _rcgCache[target.GetType()] = results;
+            }
+            
+            
+            var accessors = _rcgCache[target.GetType()]!;
+            var l = new System.Collections.Generic.List<IMappedProperty>();
+            foreach (var (field, type) in accessors)
+            {
+                var accessor = (IMappedProperty)Activator.CreateInstance(type, [target]);
+                l.Add(accessor);
             }
 
             return l;
+
         }
+    }
+
+    private System.Collections.Generic.List<IMappedProperty> GetGeneric(Component target)
+    {
+        var candidates = target.GetType().GetFields();
+        Debug.Log("Extracting properties from " + target.GetType());
+        var l = new System.Collections.Generic.List<IMappedProperty>();
+        foreach (var prop in candidates)
+        {
+            var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
+            if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
+            IMappedProperty mapped;
+            mapped = new MappedClassField(prop, target);
+                
+            if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
+            {
+                var mapper = _converters[prop.FieldType];
+                l.Add(new WrappedMappedProperty(mapped, mapper));
+            }
+            else
+            {
+                l.Add(mapped);
+            }
+        }
+
+        return l;
     }
 }
 

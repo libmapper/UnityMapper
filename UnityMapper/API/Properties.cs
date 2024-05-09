@@ -139,101 +139,96 @@ public class SignalBoundsAttribute(float min, float max) : Attribute
     public float Max { get; } = max;
 }
 
-/// <summary>
-/// Implementation of <see cref="IMappedProperty"/> that uses runtime code generation to improve performance.
-///
-/// Roughly 5x faster than <see cref="MappedClassField"/>, but has potential issues on iOS.
-/// </summary>
-public class RCGClassField : IMappedProperty
+public class SignalVectorSizeAttribute(int size) : Attribute
 {
-    
-    public delegate void SetObjectDelegate(object target, object value);
-    public delegate object GetValueDelegate(object target);
-    
-    private object _target;
-    private FieldInfo _info;
-    private SetObjectDelegate _setter;
-    private GetValueDelegate _getter;
+    public int Size { get; } = size;
+}
 
-    public RCGClassField(object target, FieldInfo info, SetObjectDelegate setter, GetValueDelegate getter)
+public class AccessorGenerator
+{
+    public static Type CreateAccessor(FieldInfo info, ModuleBuilder builder)
     {
-        _target = target;
-        _info = info;
-        _setter = setter;
-        _getter = getter;
-    }
-
-    public Type GetMappedType()
-    {
-        return _info.FieldType;
-    }
-
-    public void SetObject(object value)
-    {
-        _setter(_target, value);
-    }
-
-    public object GetValue()
-    {
-        return _getter(_target);
-    }
-
-    public string GetName()
-    {
-        return _info.DeclaringType.Name + "/" + _info.Name;
-    }
-
-    public static GetValueDelegate CreateGetter(FieldInfo _info)
-    {
-        var d = new DynamicMethod($"Get{_info.Name}_Generated", typeof(object), new[] {typeof(object)}, _info.DeclaringType);
-        var il = d.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0); // "this"
-        il.Emit(OpCodes.Castclass, _info.DeclaringType); // cast to the declaring type
-        il.Emit(OpCodes.Ldfld, _info); // "this".{_info}
-        if (_info.FieldType.IsValueType) // box it if it's a value type
-        {
-            il.Emit(OpCodes.Box, _info.FieldType);
-        }
-        il.Emit(OpCodes.Ret); // return the value
+        var vectorLength = info.GetCustomAttribute<SignalVectorSizeAttribute>()?.Size ?? 1;
         
-        Debug.Log("Compiled getter for " + _info.Name);
-        return (GetValueDelegate) d.CreateDelegate(typeof(GetValueDelegate));
-    }
-    
-    public static SetObjectDelegate CreateSetter(FieldInfo _info)
-    {
-        var d = new DynamicMethod($"Set{_info.Name}_Generated", typeof(void), new[] {typeof(object), typeof(object)}, _info.DeclaringType);
-        var il = d.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0); // "this"
-        il.Emit(OpCodes.Castclass, _info.DeclaringType); // cast to the declaring type
-        il.Emit(OpCodes.Ldarg_1); // value
-        if (_info.FieldType.IsValueType) // unbox it if it's a value type
+        var typeName = "Accessor_" + info.Name + "_" + info.DeclaringType.Name;
+        var type = builder.DefineType(typeName, TypeAttributes.Class | TypeAttributes.Public, null, [typeof(IMappedProperty)]);
+        var refField = type.DefineField("_ref", info.DeclaringType, FieldAttributes.Private);
+        
+        // implement constructor new(Component type) -> store in _ref
+        var constructor = type.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] {info.DeclaringType});
+        var il = constructor.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1);
+        il.Emit(OpCodes.Stfld, refField);
+        
+        // implement GetVectorLength
+        var getVectorLength = type.DefineMethod("GetVectorLength", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(int), null)!;
+        il = getVectorLength.GetILGenerator();
+        il.Emit(OpCodes.Ldc_I4, vectorLength);
+        il.Emit(OpCodes.Ret);
+        
+        // implement GetMappedType
+        var getMappedType = type.DefineMethod("GetMappedType", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(Type), null)!;
+        il = getMappedType.GetILGenerator();
+        il.Emit(OpCodes.Ldtoken, info.FieldType);
+        il.Emit(OpCodes.Call, typeof(Type).GetMethod("GetTypeFromHandle")!);
+        il.Emit(OpCodes.Ret);
+        
+        // implement SetObject
+        var setObject = type.DefineMethod("SetObject", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(void), new Type[] {typeof(object)})!;
+        il = setObject.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldfld, refField);
+        il.Emit(OpCodes.Ldarg_1);
+        if (info.FieldType.IsValueType)
         {
-            il.Emit(OpCodes.Unbox_Any, _info.FieldType);
+            il.Emit(OpCodes.Unbox_Any, info.FieldType);
         }
-        il.Emit(OpCodes.Stfld, _info); // "this".{_info} = value
-        il.Emit(OpCodes.Ret); // return
-        Debug.Log("Compiled setter for " + _info.Name);
-        return (SetObjectDelegate) d.CreateDelegate(typeof(SetObjectDelegate));
-    }
-    public string? Units
-    {
-        get {
-            var attr = _info.GetCustomAttribute<SignalUnitAttribute>();
-            return attr?.Units;
-        }
-    }
-    
-    public (float min, float max)? Bounds
-    {
-        get
+        il.Emit(OpCodes.Stfld, info);
+        
+        // implement GetValue
+        var getValue = type.DefineMethod("GetValue", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(object), null)!;
+        il = getValue.GetILGenerator();
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldfld, refField);
+        if (info.FieldType.IsValueType)
         {
-            var attr = _info.GetCustomAttribute<SignalBoundsAttribute>();
-            if (attr == null)
-            {
-                return null;
-            }
-            return (attr.Min, attr.Max);
+            il.Emit(OpCodes.Box, info.FieldType);
         }
+        il.Emit(OpCodes.Ret);
+        
+        
+        // implement GetName
+        var getName = type.DefineMethod("GetName", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(string), null)!;
+        il = getName.GetILGenerator();
+        il.Emit(OpCodes.Ldstr, info.DeclaringType.Name + "/" + info.Name);
+        il.Emit(OpCodes.Ret);
+        
+        // TODO: implement Units and Bounds as something other than null
+        // implement Units and Bounds as null constants
+        var units = type.DefineProperty("Units", PropertyAttributes.None, typeof(string), null);
+        var bounds = type.DefineProperty("Bounds", PropertyAttributes.None, typeof((float, float)?), null);
+        var unitsGetter = type.DefineMethod("get_Units", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof(string), null)!;
+        il = unitsGetter.GetILGenerator();
+        il.Emit(OpCodes.Ldnull);
+        il.Emit(OpCodes.Ret);
+        
+        var boundsGetter = type.DefineMethod("get_Bounds", MethodAttributes.Public | MethodAttributes.Virtual,
+            typeof((float, float)?), null)!;
+        il = boundsGetter.GetILGenerator();
+        il.Emit(OpCodes.Ldnull);
+        il.Emit(OpCodes.Ret);
+        
+        
+        units.SetGetMethod(unitsGetter);
+        bounds.SetGetMethod(boundsGetter);
+        
+        return type.CreateType();
     }
 }
