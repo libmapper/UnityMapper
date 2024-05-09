@@ -1024,20 +1024,20 @@ namespace Mapper
             }
         }
 
-        public Signal SetValue<T>(T value)
+        public Signal SetValue<T>(T value, ulong instanceId = 0)
         {
             if (value is int temp1)
-                _SetValue(temp1, 0);
+                _SetValue(temp1, instanceId);
             else if (value is float temp2)
-                _SetValue(temp2, 0);
+                _SetValue(temp2, instanceId);
             else if (value is double temp3)
-                _SetValue(temp3, 0);
+                _SetValue(temp3, instanceId);
             else if (value is int[] temp4)
-                _SetValue(temp4, 0);
+                _SetValue(temp4, instanceId);
             else if (value is float[] temp5)
-                _SetValue(temp5, 0);
+                _SetValue(temp5, instanceId);
             else if (value is double[] temp6)
-                _SetValue(temp6, 0);
+                _SetValue(temp6, instanceId);
             else
                 Console.WriteLine("error: unhandled type in Signal.SetValue().");
             return this;
