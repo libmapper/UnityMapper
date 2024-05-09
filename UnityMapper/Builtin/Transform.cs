@@ -9,101 +9,76 @@ public class TransformExtractor : IPropertyExtractor<Transform>
     {
         return
         [
-            new AccessiblePosition(component),
-            new AccessibleScale(component),
-            new AccessibleRotation(component)
+            new AccessiblePosition(),
+            new AccessibleScale(),
+            new AccessibleRotation()
         ];
     }
 }
 
-internal class AccessiblePosition(Transform transform) : IAccessibleProperty
+internal class AccessiblePosition : IAccessibleProperty<Transform, float[]>
 {
-    public void SetObject(object val)
+    public void Set(Transform target, float[] value)
     {
-        var value = (Single[])val;
-        transform.position = new Vector3(value[0], value[1], value[2]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.position.x, transform.position.y, transform.position.z};
+        target.position = new Vector3(value[0], value[1], value[2]);
     }
 
-    public Type GetMappedType()
+    public float[] Get(Transform target)
     {
-        return typeof(float[]);
+        return [target.position.x, target.position.y, target.position.z];
     }
-
     public int GetVectorLength()
     {
         return 3;
     }
 
-    public string GetName()
-    {
-        return "Transform/Position";
-    }
-    
+    public string Name => "Transform/Position";
     public string? Units => "m";
     public (float min, float max)? Bounds => null;
 }
-internal class AccessibleScale(Transform transform) : IAccessibleProperty
+
+internal class AccessibleScale : IAccessibleProperty<Transform, float[]>
 {
-    public void SetObject(object val)
+    public void Set(Transform target, float[] value)
     {
-        var value = (Single[])val;
-        transform.localScale = new Vector3(value[0], value[1], value[2]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.localScale.x, transform.localScale.y, transform.localScale.z};
+        target.localScale = new Vector3(value[0], value[1], value[2]);
     }
 
-    public Type GetMappedType()
+    public float[] Get(Transform target)
     {
-        return typeof(float[]);
+        return [target.localScale.x, target.localScale.y, target.localScale.z];
     }
-
     public int GetVectorLength()
     {
         return 3;
     }
 
-    public string GetName()
-    {
-        return "Transform/Scale";
-    }
+    public string Name => "Transform/Scale";
     public string? Units => null;
-    public (float min, float max)? Bounds => null;
+    public (float min, float max)? Bounds => (0.0f, float.MaxValue);
+
 }
 
-internal class AccessibleRotation(Transform transform) : IAccessibleProperty
+internal class AccessibleRotation : IAccessibleProperty<Transform, float[]>
 {
-    public void SetObject(object val)
+
+    public void Set(Transform target, float[] value)
     {
-        var value = (Single[])val;
-        transform.rotation = new Quaternion(value[0], value[1], value[2], value[3]);
-    }
-    public object GetValue()
-    {
-        return new float[] {transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w};
+        target.rotation = Quaternion.Euler(value[0], value[1], value[2]);
     }
 
-    public Type GetMappedType()
+    public float[] Get(Transform target)
     {
-        return typeof(float[]);
+        var euler = target.rotation.eulerAngles;
+        return [euler.x, euler.y, euler.z];
     }
-
     public int GetVectorLength()
     {
-        return 4;
+        return 3;
     }
 
-    public string GetName()
-    {
-        return "Transform/Rotation";
-    }
-
-    public string? Units => null;
-    public (float min, float max)? Bounds => (-1.0f, 1.0f);
+    public string Name => "Transform/Rotation";
+    public string? Units => "°";
+    public (float min, float max)? Bounds => (-360.0f, 360.0f);
 }
 

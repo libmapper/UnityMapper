@@ -7,58 +7,45 @@ public class LightExtractor : IPropertyExtractor<Light>
 {
     public List<IAccessibleProperty> ExtractProperties(Light component)
     {
-        return [new IntensityProperty(component), new ColorProperty(component)];
+        return [new IntensityProperty(), new ColorProperty()];
     }
 }
 
-internal class IntensityProperty(Light component) : IAccessibleProperty
+internal class IntensityProperty : IAccessibleProperty<Light, float>
 {
-    public Type GetMappedType()
-    {
-        return typeof(float);
-    }
+    
 
-    public void SetObject(object value)
-    {
-        component.intensity = (float) value;
-    }
-
-    public object GetValue()
-    {
-        return component.intensity;
-    }
-
-    public string GetName()
-    {
-        return "Light/Intensity";
-    }
+    public string Name => "Light/Intensity";
 
     public string? Units => "cd";
     public (float min, float max)? Bounds => (0.0f, 8.0f);
+    
+    public void Set(Light target, float value)
+    {
+        target.intensity = value;
+    }
+
+    public float Get(Light target)
+    {
+        return target.intensity;
+    }
 }
 
-internal class ColorProperty(Light component) : IAccessibleProperty
+internal class ColorProperty : IAccessibleProperty<Light, Color>
 {
-    public Type GetMappedType()
-    {
-        return typeof(Color);
-    }
 
-    public void SetObject(object value)
-    {
-        component.color = (Color) value;
-    }
-
-    public object GetValue()
-    {
-        return component.color;
-    }
-
-    public string GetName()
-    {
-        return "Light/Color";
-    }
+    public string Name => "Light/Color";
 
     public string? Units => null;
     public (float min, float max)? Bounds => (0.0f, 1.0f);
+    
+    public void Set(Light target, Color value)
+    {
+        target.color = value;
+    }
+
+    public Color Get(Light target)
+    {
+        return target.color;
+    }
 }
