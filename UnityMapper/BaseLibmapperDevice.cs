@@ -20,7 +20,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
     protected bool Frozen = false; // when frozen, no new extractors, mappers, or signals can be added
 
-    private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
+    //private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
 
     [SerializeField] private int pollTime = 1;
     
@@ -44,74 +44,96 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
         
     }
     
+    protected void PollBegin()
+    {
+        if (_handle != null)
+        {
+            _handle.Value.Complete();
+        } 
+    }
+    
+    protected void PollEnd()
+    {
+        _handle = _job.Schedule();
+    }
+
+    protected void DiscoverProperties(Dictionary<string, IAccessibleProperty> storage)
+    {
+        foreach (var component in componentsToExpose)
+        {
+            var maps = CreateAccessors(component);
+                
+            // TODO: this is REALLY ugly, fix later
+            foreach (var mapped in maps)
+            {
+                var wrappedMap = mapped; // wrapped version to primitive-ize type
+                var kind = mapped.BackingType;
+                var type = CreateLibmapperTypeFromPrimitive(kind);
+
+                if (type == Mapper.Type.Null)
+                {
+                    var mapper = _converters[wrappedMap.BackingType];
+                    if (mapper == null)
+                    {
+                        throw new ArgumentException("No mapper found for type: " + wrappedMap.BackingType);
+                    }
+
+                    type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
+                    if (type == Mapper.Type.Null)
+                    {
+                        throw new ArgumentException("Mapper type is not a simple type: " + mapper.GetType());
+                    }
+
+                    wrappedMap = new WrappedAccessibleProperty(mapped, mapper);
+                }
+                storage.Add(wrappedMap.Name, wrappedMap);
+            }
+        }
+    }
+    
+    private Dictionary<string, Mapper.Time> _lastChanged = new();
+
+    protected void UpdateSignals(IEnumerable<(IAccessibleProperty prop, Signal signal)> properties)
+    {
+        foreach (var (prop, signal) in properties)
+        {
+            if (!_lastChanged.ContainsKey(prop.Name))
+            {
+                _lastChanged[prop.Name] = new Mapper.Time(0);
+            }
+            
+            var lastChanged = _lastChanged[prop.Name]!;
+            var signalValue = signal.GetValue(InstanceId);
+            var component = GetComponent(prop.BackingType);
+            
+            if (signalValue.Item2 > lastChanged)
+            {
+                // incoming update from the network
+                prop.SetObject(component, signalValue.Item1);
+                _lastChanged[prop.Name].Set(signalValue.Item2);
+            }
+            else
+            {
+                // push current value to  network
+                signal.SetValue(prop.GetValue(component), InstanceId);
+                _lastChanged[prop.Name].Set(Device.GetTime());
+            }
+        }
+    }
     
     private bool _lastReady = false;
     private JobHandle? _handle;
     // Use physics update for consistent timing
     void FixedUpdate()
     {
-        if (!Frozen) return; // wait until Freeze() is called to start polling
+       // if (!Frozen) return; // wait until Freeze() is called to start polling
         
         if (_handle != null)
         {
             _handle.Value.Complete();
             if (Device.GetIsReady() && !_lastReady)
             {
-                Debug.Log("Registering signals");
-                // device just became ready
-                _lastReady = true;
-                foreach (var component in componentsToExpose)
-                {
-                    var maps = CreateMapping(component);
-                
-                    // TODO: this is REALLY ugly, fix later
-                    foreach (var mapped in maps)
-                    {
-                        var wrappedMap = mapped; // wrapped version to primitive-ize type
-                        var kind = mapped.GetMappedType();
-                        var type = CreateLibmapperTypeFromPrimitive(kind);
 
-                        if (type == Mapper.Type.Null)
-                        {
-                            var mapper = _converters[wrappedMap.GetMappedType()];
-                            if (mapper == null)
-                            {
-                                throw new ArgumentException("No mapper found for type: " + wrappedMap.GetMappedType());
-                            }
-
-                            type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
-                            if (type == Mapper.Type.Null)
-                            {
-                                throw new ArgumentException("Mapper type is not a simple type: " + mapper.GetType());
-                            }
-                            
-                            wrappedMap = new WrappedMappedProperty(mapped, mapper);
-                        }
-                        
-                        Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
-                        var signal = Device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type);
-                        _properties.Add((signal, wrappedMap, new Mapper.Time()));
-                        signal.SetValue(wrappedMap.GetValue());
-                    }
-                
-                }
-            }
-            foreach (var (signal, mapped, lastChanged) in _properties)
-            {
-                var value = signal.GetValue(InstanceId);
-                // check if the value has changed
-                if (value.Item2 > lastChanged)
-                {
-                    // the value was changed on the network, so we should update the local value
-                    mapped.SetObject(value.Item1);
-                    lastChanged.Set(value.Item2);
-                }
-                else
-                {
-                    // no remote updates have happened, so push our local value
-                    signal.SetValue(mapped.GetValue(), InstanceId);
-                    lastChanged.Set(Device.GetTime());
-                }
             }
         }
         else
@@ -203,7 +225,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     }
 
 
-    private System.Collections.Generic.List<IMappedProperty> CreateMapping(Component target)
+    private System.Collections.Generic.List<IAccessibleProperty> CreateAccessors(Component target)
     {
         if (_extractors.ContainsKey(target.GetType()))
         {
@@ -214,19 +236,19 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
             // generic mapping 
             var candidates = target.GetType().GetFields();
             Debug.Log("Extracting properties from " + target.GetType(), target);
-            var l = new System.Collections.Generic.List<IMappedProperty>();
+            var l = new System.Collections.Generic.List<IAccessibleProperty>();
             foreach (var prop in candidates)
             {
                 var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
                 if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                var mapped = new MappedClassField(prop, target);
+                var mapped = new AccessibleClassField(prop);
                 
                 if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
                 {
                     
                     var converter = _converters[prop.FieldType];
                     Debug.Log("Extracting (wrapped) property: " + prop.Name + " of type: " + CreateLibmapperTypeFromPrimitive(converter.SimpleType) + " for libmapper.", target);
-                    l.Add(new WrappedMappedProperty(mapped, converter));
+                    l.Add(new WrappedAccessibleProperty(mapped, converter));
                 }
                 else
                 {
