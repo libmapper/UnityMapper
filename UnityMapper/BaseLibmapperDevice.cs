@@ -14,7 +14,8 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
 {
     
     protected Device Device;
-    protected ulong InstanceId = 0;
+
+    public ulong InstanceId { get; set; }
     
     private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
