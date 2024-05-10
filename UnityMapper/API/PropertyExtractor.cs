@@ -12,7 +12,7 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
     /// <summary>
     /// Create a list of mapped properties from a component.
     ///
-    /// Each MappedProperty should contain a reference to the component so it can independently update or get values.
+    /// Each MappedProperty should contain a reference to the component, so it can independently update or get values.
     /// </summary>
     /// <param name="component">Provided component</param>
     /// <returns></returns>
