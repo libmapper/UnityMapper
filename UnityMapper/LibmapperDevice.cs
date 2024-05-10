@@ -54,7 +54,7 @@ public class LibmapperDevice : BaseLibmapperDevice
             DiscoverProperties(props);
             foreach (var (name, (prop, owner)) in props)
             {
-                var signal = Device.AddSignal(Signal.Direction.Both, name, prop.GetVectorLength(), CreateLibmapperTypeFromPrimitive(prop.BackingType), prop.Units );
+                var signal = Device.AddSignal(Signal.Direction.Incoming, name, prop.GetVectorLength(), CreateLibmapperTypeFromPrimitive(prop.BackingType), prop.Units);
                 if (prop.Bounds != null)
                 {
                     var val = prop.Bounds.Value;
