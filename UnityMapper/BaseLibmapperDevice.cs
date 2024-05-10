@@ -27,12 +27,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     [FormerlySerializedAs("_componentsToMap")] [SerializeField]
     private System.Collections.Generic.List<Component> componentsToExpose = [];
 
-    private PollJob _job;
-    
-    public virtual void Start()
-    {
-
-    }
+    private PollJob? _job;
     
     /// <summary>
     /// Called before the device is frozen, allowing for custom extractors, mappers, and signals to be registered.
@@ -54,7 +49,9 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     
     protected void PollEnd()
     {
-        _handle = _job.Schedule();
+        _job ??= new PollJob(Device._obj, pollTime);
+
+        _handle = _job.Value.Schedule();
     }
 
     protected void DiscoverProperties(Dictionary<string, IAccessibleProperty> storage)
@@ -123,27 +120,6 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
     
     private bool _lastReady = false;
     private JobHandle? _handle;
-    // Use physics update for consistent timing
-    void FixedUpdate()
-    {
-       // if (!Frozen) return; // wait until Freeze() is called to start polling
-        
-        if (_handle != null)
-        {
-            _handle.Value.Complete();
-            if (Device.GetIsReady() && !_lastReady)
-            {
-
-            }
-        }
-        else
-        {
-            _job = new PollJob(Device._obj, pollTime);
-        }
-
-        _handle = _job.Schedule();
-
-    }
     
     /// <summary>
     /// Register a property extractor for a specific component type.
