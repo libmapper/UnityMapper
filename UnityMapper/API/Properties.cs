@@ -157,6 +157,12 @@ public class AccessorGenerator
         // implement constructor new(Component type) -> store in _ref
         var constructor = type.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, new Type[] {info.DeclaringType});
         var il = constructor.GetILGenerator();
+        
+        // call base constructor
+        il.Emit(OpCodes.Ldarg_0);
+        var ci = typeof(object).GetConstructor(Type.EmptyTypes);
+        il.Emit(OpCodes.Call, ci!);
+        
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Stfld, refField);
