@@ -62,6 +62,18 @@ public interface IAccessibleProperty
     /// The numerical bounds of the property. Use null if the property is unbounded.
     /// </summary>
     (float min, float max)? Bounds { get; }
+    
+    /// <summary>
+    /// Returns if the property is the same type as another property.
+    /// The other property should be the same type, same vector size, and have the same name.
+    /// This is used to determine how to assign instances of signals to game objects.
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    bool IsSameProperty(IAccessibleProperty other)
+    {
+        return other.GetType() == this.GetType();
+    }
 }
 
 public interface IAccessibleProperty<TComponent, TProperty> : IAccessibleProperty where TProperty : notnull
@@ -104,6 +116,8 @@ public interface IAccessibleProperty<TComponent, TProperty> : IAccessiblePropert
 /// <param name="target">The component the field belongs to</param>
 public class AccessibleClassField(FieldInfo info) : IAccessibleProperty
 {
+    public FieldInfo BackingField => info;
+    
     public void SetObject(object target, object value)
     {
         info.SetValue(target, value);
@@ -137,6 +151,16 @@ public class AccessibleClassField(FieldInfo info) : IAccessibleProperty
             }
             return (attr.Min, attr.Max);
         }
+    }
+    
+    public bool IsSameProperty(IAccessibleProperty other)
+    {
+        if (other is not AccessibleClassField otherField)
+        {
+            return false;
+        }
+
+        return otherField.BackingField == BackingField;
     }
 }
 
