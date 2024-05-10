@@ -54,7 +54,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
         _handle = _job.Value.Schedule();
     }
 
-    protected void DiscoverProperties(Dictionary<string, IAccessibleProperty> storage)
+    protected void DiscoverProperties(Dictionary<string, (IAccessibleProperty prop, Component owner)> storage)
     {
         foreach (var component in componentsToExpose)
         {
@@ -83,16 +83,16 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
 
                     wrappedMap = new WrappedAccessibleProperty(mapped, mapper);
                 }
-                storage.Add(wrappedMap.Name, wrappedMap);
+                storage.Add(wrappedMap.Name, (wrappedMap, component));
             }
         }
     }
     
     private Dictionary<string, Mapper.Time> _lastChanged = new();
 
-    protected void UpdateSignals(IEnumerable<(IAccessibleProperty prop, Signal signal)> properties)
+    protected void UpdateSignals(IEnumerable<(IAccessibleProperty prop, Signal signal, Component owner)> properties)
     {
-        foreach (var (prop, signal) in properties)
+        foreach (var (prop, signal, owner) in properties)
         {
             if (!_lastChanged.ContainsKey(prop.Name))
             {
@@ -101,18 +101,17 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
             
             var lastChanged = _lastChanged[prop.Name]!;
             var signalValue = signal.GetValue(InstanceId);
-            var component = GetComponent(prop.BackingType);
             
             if (signalValue.Item2 > lastChanged)
             {
                 // incoming update from the network
-                prop.SetObject(component, signalValue.Item1);
+                prop.SetObject(owner, signalValue.Item1);
                 _lastChanged[prop.Name].Set(signalValue.Item2);
             }
             else
             {
                 // push current value to  network
-                signal.SetValue(prop.GetValue(component), InstanceId);
+                signal.SetValue(prop.GetValue(owner), InstanceId);
                 _lastChanged[prop.Name].Set(Device.GetTime());
             }
         }
@@ -176,7 +175,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
         Frozen = true;
     }
 
-    private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
+    protected static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
     {
         if (t.IsArray)
         {
