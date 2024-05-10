@@ -15,7 +15,7 @@ public class LibmapperDevice : BaseLibmapperDevice
     /// </summary>
     [SerializeField] private bool useApi = false;
     
-    public override void Start()
+    public void Start()
     {
         var tmp = Frozen;
         Frozen = false; // in case another script called Freeze() before unity calls Start()
@@ -38,5 +38,38 @@ public class LibmapperDevice : BaseLibmapperDevice
         {
             Freeze();
         }
+    }
+
+    private HashSet<(IAccessibleProperty prop, Signal bound, Component owner)> _properties = new();
+    private bool _lastReady = false;
+    
+    public void FixedUpdate()
+    {
+        PollBegin();
+        
+        if (Device.GetIsReady() && !_lastReady)
+        {
+            _lastReady = true; // only run once
+            var props = new Dictionary<string, (IAccessibleProperty prop, Component owner)>();
+            DiscoverProperties(props);
+            foreach (var (name, (prop, owner)) in props)
+            {
+                var signal = Device.AddSignal(Signal.Direction.Both, name, prop.GetVectorLength(), CreateLibmapperTypeFromPrimitive(prop.BackingType), prop.Units );
+                if (prop.Bounds != null)
+                {
+                    var val = prop.Bounds.Value;
+                    signal.SetProperty(Property.Min, val.min);
+                    signal.SetProperty(Property.Max, val.max);
+                }
+                _properties.Add((prop, signal, owner));
+            }
+        }
+
+        if (Device.GetIsReady())
+        {
+            UpdateSignals(_properties);
+        }
+        
+        PollEnd();
     }
 }
