@@ -102,7 +102,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
             var lastChanged = _lastChanged[prop.Name]!;
             var signalValue = signal.GetValue(InstanceId);
             
-            if (signalValue.Item2 > lastChanged)
+            if (signalValue.Item2 > lastChanged && signalValue.Item1 != null)
             {
                 // incoming update from the network
                 prop.SetObject(owner, signalValue.Item1);
