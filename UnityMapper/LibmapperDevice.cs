@@ -33,6 +33,8 @@ public class LibmapperDevice : MonoBehaviour
     private System.Collections.Generic.List<Component> componentsToExpose = [];
 
     private PollJob _job;
+
+    private DefaultPropertyExtractor? _defaultExtractor = null;
     
     public void Start()
     {
@@ -217,7 +219,7 @@ public class LibmapperDevice : MonoBehaviour
         _frozen = true;
     }
 
-    private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
+    public static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
     {
         if (t.IsArray)
         {
@@ -250,29 +252,9 @@ public class LibmapperDevice : MonoBehaviour
         }
         else
         {
-            // generic mapping 
-            var candidates = target.GetType().GetFields();
-            Debug.Log("Extracting properties from " + target.GetType());
-            var l = new System.Collections.Generic.List<IMappedProperty>();
-            foreach (var prop in candidates)
-            {
-                var baseType = CreateLibmapperTypeFromPrimitive(prop.FieldType);
-                if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-                Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
-                var mapped = new MappedClassField(prop, target);
-                
-                if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
-                {
-                    var mapper = _converters[prop.FieldType];
-                    l.Add(new WrappedMappedProperty(mapped, mapper));
-                }
-                else
-                {
-                    l.Add(mapped);
-                }
-            }
-
-            return l;
+            // use default extractor
+            _defaultExtractor ??= new DefaultPropertyExtractor(_converters);
+            return _defaultExtractor.ExtractProperties(target);
         }
     }
 }

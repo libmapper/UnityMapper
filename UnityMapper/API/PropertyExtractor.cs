@@ -1,3 +1,4 @@
+using System.Reflection;
 using UnityEngine;
 
 namespace UnityMapper.API;
@@ -26,11 +27,46 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
         }
         return ExtractProperties((T) component);
     }
-    Type IPropertyExtractor.ComponentType => typeof(T);
 }
 
 public interface IPropertyExtractor
 {
     List<IMappedProperty> ExtractProperties(Component component);
-    Type ComponentType { get; }
+}
+
+/// <summary>
+/// Reflection-based property extractor that maps fields to libmapper signals.
+/// </summary>
+/// <param name="_converters">Available type converters to primitivize types</param>
+public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converters) : IPropertyExtractor
+{
+    public List<IMappedProperty> ExtractProperties(Component target)
+    {
+        var candidates = target.GetType().GetFields(BindingFlags.Instance)
+            .Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
+            .ToList();
+        
+        Debug.Log("Extracting properties from " + target.GetType());
+        var l = new List<IMappedProperty>();
+        foreach (var prop in candidates)
+        {
+            var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
+            if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
+            var mapped = new MappedClassField(prop, target);
+                
+            if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
+            {
+                var converter = _converters[prop.FieldType];
+                l.Add(new WrappedMappedProperty(mapped, converter));
+                Debug.Log("Extracted property: " + prop.Name + " of type: " + converter.SimpleType + " for libmapper.");
+            }
+            else
+            {
+                l.Add(mapped);
+                Debug.Log("Extracted property: " + prop.Name + " of type: " + baseType + " for libmapper.");
+            }
+        }
+
+        return l;
+    }
 }
