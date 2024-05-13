@@ -47,22 +47,23 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
             .ToList();
         
         Debug.Log("Extracting properties from " + target.GetType());
-        var l = new System.Collections.Generic.List<IMappedProperty>();
+        var l = new List<IMappedProperty>();
         foreach (var prop in candidates)
         {
             var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
             if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-            Debug.Log("Mapping property: " + prop.Name + " of type: " + baseType + " for libmapper.");
             var mapped = new MappedClassField(prop, target);
                 
             if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
             {
-                var mapper = _converters[prop.FieldType];
-                l.Add(new WrappedMappedProperty(mapped, mapper));
+                var converter = _converters[prop.FieldType];
+                l.Add(new WrappedMappedProperty(mapped, converter));
+                Debug.Log("Extracted property: " + prop.Name + " of type: " + converter.SimpleType + " for libmapper.");
             }
             else
             {
                 l.Add(mapped);
+                Debug.Log("Extracted property: " + prop.Name + " of type: " + baseType + " for libmapper.");
             }
         }
 
