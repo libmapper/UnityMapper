@@ -217,7 +217,7 @@ public class LibmapperDevice : MonoBehaviour
         _frozen = true;
     }
 
-    private static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
+    public static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
     {
         if (t.IsArray)
         {
