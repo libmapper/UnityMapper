@@ -9,7 +9,7 @@ namespace UnityMapper;
 /// This only uses one Libmapper device, and can be thought of as a flattened combination of all child objects.
 /// If multiple child objects expose identical properties, they'll be expressed as separate instances of the same signal.
 /// </summary>
-public class MappedInstanceController : Component
+public class MappedInstanceController : MonoBehaviour
 {
     
     private Device _device;
