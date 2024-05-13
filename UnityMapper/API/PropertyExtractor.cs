@@ -1,3 +1,4 @@
+using System.Reflection;
 using UnityEngine;
 
 namespace UnityMapper.API;
@@ -41,7 +42,10 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
 {
     public List<IMappedProperty> ExtractProperties(Component target)
     {
-        var candidates = target.GetType().GetFields();
+        var candidates = target.GetType().GetFields(BindingFlags.Instance)
+            .Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
+            .ToList();
+        
         Debug.Log("Extracting properties from " + target.GetType());
         var l = new System.Collections.Generic.List<IMappedProperty>();
         foreach (var prop in candidates)
