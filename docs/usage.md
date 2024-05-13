@@ -14,6 +14,14 @@ in your library search path.
 After making sure libmapper is properly installed, drag-and-drop `publish/UnityMapper.dll` onto your unity
 assets window.
 
+### Getting Libmapper
+
+Follow the instructions how to build libmapper [here](https://github.com/libmapper/libmapper/blob/main/doc/how_to_compile_and_run.md).
+
+On Windows you'll need three files: `libmapper.dll`, `liblo.dll`, and `zlib.dll`. Drag those three files into your Unity assets, making an appropriate folder is a good idea!
+
+Make sure in the Unity inspector those library files are set to be used on the correct platform. For example, on Windows, you'll want to set them to be used on Windows, only x86/x64.
+
 ## Using Libmapper
 
 The library includes a component, named `Libmapper Device`. In the Unity inspector, click Add Component and search 
