@@ -55,7 +55,7 @@ public abstract class BaseLibmapperDevice : MonoBehaviour
         _handle = _job.Value.Schedule();
     }
 
-    protected void DiscoverProperties(Dictionary<string, (IAccessibleProperty prop, Component owner)> storage)
+    public void DiscoverProperties(Dictionary<string, (IAccessibleProperty prop, Component owner)> storage)
     {
         foreach (var component in componentsToExpose)
         {
