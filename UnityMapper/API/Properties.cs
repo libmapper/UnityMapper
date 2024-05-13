@@ -166,6 +166,7 @@ public class AccessorGenerator
         il.Emit(OpCodes.Ldarg_0);
         il.Emit(OpCodes.Ldarg_1);
         il.Emit(OpCodes.Stfld, refField);
+        il.Emit(OpCodes.Ret);
         
         // implement GetVectorLength
         var getVectorLength = type.DefineMethod("GetVectorLength", MethodAttributes.Public | MethodAttributes.Virtual,
@@ -194,6 +195,7 @@ public class AccessorGenerator
             il.Emit(OpCodes.Unbox_Any, info.FieldType);
         }
         il.Emit(OpCodes.Stfld, info);
+        il.Emit(OpCodes.Ret);
         
         // implement GetValue
         var getValue = type.DefineMethod("GetValue", MethodAttributes.Public | MethodAttributes.Virtual,
