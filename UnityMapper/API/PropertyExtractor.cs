@@ -26,11 +26,9 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
         }
         return ExtractProperties((T) component);
     }
-    Type IPropertyExtractor.ComponentType => typeof(T);
 }
 
 public interface IPropertyExtractor
 {
     List<IMappedProperty> ExtractProperties(Component component);
-    Type ComponentType { get; }
 }
