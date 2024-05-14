@@ -4,7 +4,7 @@ using UnityEngine;
 namespace UnityMapper.API;
 
 /// <summary>
-/// An object encapsulating a property of a class that can be mapped to a signal.
+/// An object encapsulating a property of a class that can be bound to a signal.
 /// </summary>
 public interface IBoundProperty
 {
