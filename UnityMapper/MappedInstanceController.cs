@@ -13,10 +13,12 @@ public class MappedInstanceController : MonoBehaviour
 {
     
     private Device _device;
+    private MergedSignalContainer _mergedSignals;
 
     void Start()
     {
         _device = new Device("MapperInstanceController");
+        _mergedSignals = new MergedSignalContainer(_device);
     }
 
     private ulong _lastInstanceId = 10;
@@ -54,13 +56,60 @@ public class MappedInstanceController : MonoBehaviour
         }
     }
 
-    void ChildAdded(ulong id)
+    private void ChildAdded(ulong id)
+    {
+        var device = _trackedInstances[id].device;
+        var props = new Dictionary<string, (IAccessibleProperty prop, Component owner)>();
+        device.DiscoverProperties(props);
+        foreach (var (name, (prop, owner)) in props)
+        {
+            if (!_properties.ContainsKey(prop))
+            {
+                _properties[prop] = [];
+            }
+            _properties[prop].Add(id);
+            var signal = _device.AddSignal(Signal.Direction.Incoming, name, prop.GetVectorLength(),
+                BaseLibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.BackingType), prop.Units);
+        }
+    }
+
+    private void ChildRemoved(ulong id)
     {
         
     }
+}
 
-    void ChildRemoved(ulong id)
+
+/// <summary>
+/// This class tracks all identical signals from child instances and merges them into a single signal.
+/// </summary>
+class MergedSignalContainer(Device _device)
+{
+    /// <summary>
+    /// All signals held by this container and which instances are subscribed to them
+    /// </summary>
+    private readonly Dictionary<IAccessibleProperty, (Signal signal, HashSet<(ulong ownerId, Component trackedComponent)> subscribers)> _signals = [];
+    
+
+    /// <summary>
+    /// Called to add a new instance's properties to the container.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="props"></param>
+    public void AddProperties(ulong id, IEnumerable<(IAccessibleProperty prop, Component owner)> props)
     {
-        
+        foreach (var (prop, owner) in props)
+        {
+            if (!_signals.Keys.Any(c => c.IsSameProperty(prop))) // newly discovered property
+            {
+                var signal = _device.AddSignal(Signal.Direction.Incoming, prop.Name, prop.GetVectorLength(),
+                    BaseLibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.BackingType));
+                _signals[prop] = (signal, new HashSet<(ulong, Component)>());
+                Debug.Log("Discovered new signal: " + prop.Name);
+            }
+
+            _signals[prop].subscribers.Add((id, owner));
+            _signals[prop].signal.ReserveInstance(id);
+        }
     }
 }
