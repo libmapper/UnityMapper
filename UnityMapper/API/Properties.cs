@@ -1,7 +1,7 @@
 using System.Reflection;
 using UnityEngine;
 
-namespace UnityMapper;
+namespace UnityMapper.API;
 
 /// <summary>
 /// An object encapsulating a property of a class that can be mapped to a signal.
