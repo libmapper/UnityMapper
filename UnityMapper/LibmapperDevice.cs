@@ -19,7 +19,7 @@ public class LibmapperDevice : MonoBehaviour
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
     private bool _frozen = false; // when frozen, no new extractors, mappers, or signals can be added
 
-    private System.Collections.Generic.List<(Signal, IMappedProperty, Mapper.Time lastChanged)> _properties = [];
+    private System.Collections.Generic.List<(Signal, IBoundProperty, Mapper.Time lastChanged)> _properties = [];
 
     [SerializeField] private int pollTime = 1;
     [SerializeField] private bool nonBlockingPolling = false;
@@ -120,7 +120,7 @@ public class LibmapperDevice : MonoBehaviour
                                 throw new ArgumentException("Mapper type is not a simple type: " + mapper.GetType());
                             }
                             
-                            wrappedMap = new WrappedMappedProperty(mapped, mapper);
+                            wrappedMap = new WrappedBoundProperty(mapped, mapper);
                         }
                         
                         Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
@@ -244,7 +244,7 @@ public class LibmapperDevice : MonoBehaviour
     }
 
 
-    private System.Collections.Generic.List<IMappedProperty> CreateMapping(Component target)
+    private System.Collections.Generic.List<IBoundProperty> CreateMapping(Component target)
     {
         if (_extractors.ContainsKey(target.GetType()))
         {
@@ -259,7 +259,7 @@ public class LibmapperDevice : MonoBehaviour
     }
 }
 
-internal class WrappedMappedProperty(IMappedProperty inner, ITypeConverter converter) : IMappedProperty
+internal class WrappedBoundProperty(IBoundProperty inner, ITypeConverter converter) : IBoundProperty
 {
     public int GetVectorLength()
     {

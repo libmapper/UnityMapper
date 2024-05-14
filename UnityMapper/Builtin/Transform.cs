@@ -5,18 +5,18 @@ namespace UnityMapper.Builtin;
 
 public class TransformExtractor : IPropertyExtractor<Transform>
 {
-    public List<IMappedProperty> ExtractProperties(Transform component)
+    public List<IBoundProperty> ExtractProperties(Transform component)
     {
         return
         [
-            new MappedPosition(component),
-            new MappedScale(component),
-            new MappedRotation(component)
+            new BoundPosition(component),
+            new BoundScale(component),
+            new BoundRotation(component)
         ];
     }
 }
 
-internal class MappedPosition(Transform transform) : IMappedProperty
+internal class BoundPosition(Transform transform) : IBoundProperty
 {
     public void SetObject(object val)
     {
@@ -46,7 +46,7 @@ internal class MappedPosition(Transform transform) : IMappedProperty
     public string? Units => "m";
     public (float min, float max)? Bounds => null;
 }
-internal class MappedScale(Transform transform) : IMappedProperty
+internal class BoundScale(Transform transform) : IBoundProperty
 {
     public void SetObject(object val)
     {
@@ -76,7 +76,7 @@ internal class MappedScale(Transform transform) : IMappedProperty
     public (float min, float max)? Bounds => null;
 }
 
-internal class MappedRotation(Transform transform) : IMappedProperty
+internal class BoundRotation(Transform transform) : IBoundProperty
 {
     public void SetObject(object val)
     {

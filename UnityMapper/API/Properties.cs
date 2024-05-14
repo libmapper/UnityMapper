@@ -6,7 +6,7 @@ namespace UnityMapper.API;
 /// <summary>
 /// An object encapsulating a property of a class that can be mapped to a signal.
 /// </summary>
-public interface IMappedProperty
+public interface IBoundProperty
 {
     /// <summary>
     /// The vector size of this mapped property.
@@ -70,13 +70,13 @@ public interface IMappedProperty
 }
 
 /// <summary>
-/// Simple implementation of <see cref="IMappedProperty"/> for fields.
+/// Simple implementation of <see cref="IBoundProperty"/> for fields.
 ///
 /// Uses reflection to get and set values. For more complex properties a custom implementation should be used.
 /// </summary>
 /// <param name="info">The target field</param>
 /// <param name="target">The component the field belongs to</param>
-public class MappedClassField(FieldInfo info, Component target) : IMappedProperty
+public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 {
     
     // TODO: Add check to ensure info belongs to target

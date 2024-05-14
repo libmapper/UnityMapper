@@ -17,9 +17,9 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
     /// </summary>
     /// <param name="component">Provided component</param>
     /// <returns></returns>
-    List<IMappedProperty> ExtractProperties(T component);
+    List<IBoundProperty> ExtractProperties(T component);
     
-    List<IMappedProperty> IPropertyExtractor.ExtractProperties(Component component)
+    List<IBoundProperty> IPropertyExtractor.ExtractProperties(Component component)
     {
         if (!(component is T))
         {
@@ -31,7 +31,7 @@ public interface IPropertyExtractor<T> : IPropertyExtractor where T : Component
 
 public interface IPropertyExtractor
 {
-    List<IMappedProperty> ExtractProperties(Component component);
+    List<IBoundProperty> ExtractProperties(Component component);
 }
 
 /// <summary>
@@ -40,24 +40,24 @@ public interface IPropertyExtractor
 /// <param name="_converters">Available type converters to primitivize types</param>
 public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converters) : IPropertyExtractor
 {
-    public List<IMappedProperty> ExtractProperties(Component target)
+    public List<IBoundProperty> ExtractProperties(Component target)
     {
         var candidates = target.GetType().GetFields(BindingFlags.Instance)
             .Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
             .ToList();
         
         Debug.Log("Extracting properties from " + target.GetType());
-        var l = new List<IMappedProperty>();
+        var l = new List<IBoundProperty>();
         foreach (var prop in candidates)
         {
             var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
             if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
-            var mapped = new MappedClassField(prop, target);
+            var mapped = new BoundClassField(prop, target);
                 
             if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
             {
                 var converter = _converters[prop.FieldType];
-                l.Add(new WrappedMappedProperty(mapped, converter));
+                l.Add(new WrappedBoundProperty(mapped, converter));
                 Debug.Log("Extracted property: " + prop.Name + " of type: " + converter.SimpleType + " for libmapper.");
             }
             else

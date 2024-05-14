@@ -5,13 +5,13 @@ namespace UnityMapper.Builtin;
 
 public class LightExtractor : IPropertyExtractor<Light>
 {
-    public List<IMappedProperty> ExtractProperties(Light component)
+    public List<IBoundProperty> ExtractProperties(Light component)
     {
         return [new IntensityProperty(component), new ColorProperty(component)];
     }
 }
 
-internal class IntensityProperty(Light component) : IMappedProperty
+internal class IntensityProperty(Light component) : IBoundProperty
 {
     public Type GetMappedType()
     {
@@ -37,7 +37,7 @@ internal class IntensityProperty(Light component) : IMappedProperty
     public (float min, float max)? Bounds => (0.0f, 8.0f);
 }
 
-internal class ColorProperty(Light component) : IMappedProperty
+internal class ColorProperty(Light component) : IBoundProperty
 {
     public Type GetMappedType()
     {
