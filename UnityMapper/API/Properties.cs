@@ -60,6 +60,13 @@ public interface IMappedProperty
     /// The numerical bounds of the property. Use null if the property is unbounded.
     /// </summary>
     (float min, float max)? Bounds { get; }
+    
+    /// <summary>
+    /// If this signal is currently "Active", meaning it's value is useful and updating it will cause a visible effect.
+    ///
+    /// For example, if the backing component in Unity is disabled this should return false.
+    /// </summary>
+    bool IsActive => true;
 }
 
 /// <summary>
