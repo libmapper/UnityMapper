@@ -201,21 +201,22 @@ public class AccessorGenerator
         var getValue = type.DefineMethod("GetValue", MethodAttributes.Public | MethodAttributes.Virtual,
             typeof(object), null)!;
         il = getValue.GetILGenerator();
-        il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Ldfld, refField);
+        il.Emit(OpCodes.Ldarg_0); // load this
+        il.Emit(OpCodes.Ldfld, refField); // this -> _ref
+        il.Emit(OpCodes.Ldfld, info); // _ref -> target field
         if (info.FieldType.IsValueType)
         {
-            il.Emit(OpCodes.Box, info.FieldType);
+            il.Emit(OpCodes.Box, info.FieldType); // put on heap if needed
         }
-        il.Emit(OpCodes.Ret);
+        il.Emit(OpCodes.Ret); // return pointer to value
         
         
         // implement GetName
         var getName = type.DefineMethod("GetName", MethodAttributes.Public | MethodAttributes.Virtual,
             typeof(string), null)!;
         il = getName.GetILGenerator();
-        il.Emit(OpCodes.Ldstr, info.DeclaringType.Name + "/" + info.Name);
-        il.Emit(OpCodes.Ret);
+        il.Emit(OpCodes.Ldstr, info.DeclaringType.Name + "/" + info.Name); // load constant string
+        il.Emit(OpCodes.Ret); // return
         
         // TODO: implement Units and Bounds as something other than null
         // implement Units and Bounds as null constants
