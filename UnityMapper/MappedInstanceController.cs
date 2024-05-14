@@ -19,7 +19,7 @@ public class MappedInstanceController : MonoBehaviour
         _device = new Device("MapperInstanceController");
     }
 
-    private ulong _lastInstanceId = 0;
+    private ulong _lastInstanceId = 10;
     
     private readonly Dictionary<ulong, (InstancedLibmapperDevice device, GameObject owner)> _trackedInstances = [];
 
