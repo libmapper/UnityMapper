@@ -221,16 +221,22 @@ public class AccessorGenerator
         // implement Units and Bounds as null constants
         var units = type.DefineProperty("Units", PropertyAttributes.None, typeof(string), null);
         var bounds = type.DefineProperty("Bounds", PropertyAttributes.None, typeof((float, float)?), null);
-        var unitsGetter = type.DefineMethod("get_Units", MethodAttributes.Public | MethodAttributes.Virtual,
+        var unitsGetter = type.DefineMethod("get_Units", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.SpecialName,
             typeof(string), null)!;
         il = unitsGetter.GetILGenerator();
         il.Emit(OpCodes.Ldnull);
         il.Emit(OpCodes.Ret);
         
-        var boundsGetter = type.DefineMethod("get_Bounds", MethodAttributes.Public | MethodAttributes.Virtual,
+        
+        // bounds getter
+        // = "return new (float, float)?()"
+        var boundsGetter = type.DefineMethod("get_Bounds", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.SpecialName,
             typeof((float, float)?), null)!;
         il = boundsGetter.GetILGenerator();
-        il.Emit(OpCodes.Ldnull);
+        var lvar1 = il.DeclareLocal(typeof((float, float)?));
+        il.Emit(OpCodes.Ldloca, lvar1);
+        il.Emit(OpCodes.Initobj, typeof((float, float)?));
+        il.Emit(OpCodes.Ldloc, lvar1);
         il.Emit(OpCodes.Ret);
         
         
