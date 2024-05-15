@@ -12,16 +12,43 @@ namespace UnityMapper.Instances;
 public class SignalCollection
 {
     private Device _device;
+    private Signal _signal;
+    private System.Collections.Generic.List<SignalSpec> _signals = [];
+    private Dictionary<ulong, Component> _instances = new();
     
-    public SignalCollection(Device device)
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="device"></param>
+    /// <param name="spec"></param>
+    /// <param name="owner"></param>
+    public SignalCollection(Device device, SignalSpec spec, GameObject owner)
     {
         _device = device;
+        _signals.Add(spec);
     }
     
     /// <summary>
     /// A full path name to the signal, from the highest root GameObject.
     /// </summary>
     public string Name { get; private set; }
+
+    /// <summary>
+    /// If this collection can accept the specified discovered signal
+    /// </summary>
+    /// <param name="other"></param>
+    /// <returns></returns>
+    public bool CanAccept(SignalSpec other) => _signals[0].CanGroupWith(other);
+    
+    public void Update()
+    {
+        // TODO
+    }
+
+    public void Add(SignalSpec toAdd)
+    {
+        // TODO
+    }
     
 }
 

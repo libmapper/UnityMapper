@@ -2,6 +2,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityMapper.API;
 using UnityMapper.Builtin;
+using UnityMapper.Instances;
 
 namespace UnityMapper;
 using System.Reflection;
@@ -19,7 +20,7 @@ public class LibmapperDevice : MonoBehaviour
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
     private bool _frozen = false; // when frozen, no new extractors, mappers, or signals can be added
 
-    private System.Collections.Generic.List<(Signal, IBoundProperty, Mapper.Time lastChanged)> _properties = [];
+    private System.Collections.Generic.List<SignalCollection> _properties = [];
 
     [SerializeField] private int pollTime = 1;
     [SerializeField] private bool nonBlockingPolling = false;
@@ -123,44 +124,37 @@ public class LibmapperDevice : MonoBehaviour
                             wrappedMap = new WrappedBoundProperty(mapped, mapper);
                         }
                         
-                        Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
-                        var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type, wrappedMap.Units!);
-                        if (wrappedMap.Bounds != null)
-                        {
-                            var bounds = wrappedMap.Bounds.Value;
-                            signal.SetProperty(Property.Min, bounds.min);
-                            signal.SetProperty(Property.Max, bounds.max);
-                        }
-                        
-                        _properties.Add((signal, wrappedMap, new Mapper.Time()));
-                        signal.SetValue(wrappedMap.GetValue());
+                        RegisterProperty(wrappedMap);
                     }
                 
                 }
             }
-            foreach (var (signal, mapped, lastChanged) in _properties)
+            foreach (var collection in _properties)
             {
-                var value = signal.GetValue();
-                // check if the value has changed
-                if (value.Item2 > lastChanged)
-                {
-                    // the value was changed on the network, so we should update the local value
-                    mapped.SetObject(value.Item1);
-                    lastChanged.Set(value.Item2);
-                }
-                else
-                {
-                    // no remote updates have happened, so push our local value
-                    signal.SetValue(mapped.GetValue());
-                    lastChanged.Set(_device.GetTime());
-                }
-            
+                collection.Update();
             }
         }
 
         if (!nonBlockingPolling)
         {
             _handle = _job.Schedule();
+        }
+    }
+
+    /// <summary>
+    /// Either adds the property to a collection as an instance of an existing signal or creates a new signal
+    /// </summary>
+    /// <param name="property"></param>
+    private void RegisterProperty(IBoundProperty property, Component comp)
+    {
+        var spec = new SignalSpec(property.GetName(), comp.gameObject, property);
+        foreach (var existing in _properties)
+        {
+            if (existing.CanAccept(spec))
+            {
+                existing.Add(spec);
+                return;
+            }
         }
     }
     
