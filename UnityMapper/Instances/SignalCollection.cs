@@ -44,4 +44,34 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// Accessor for the property on that specific object
     /// </summary>
     public IBoundProperty Property { get; private set; } = Property;
+    
+    
+    /// <summary>
+    /// Whether this signal should be expressed as an instance of another signal
+    /// </summary>
+    /// <param name="other">Another signal to test for similarity</param>
+    public bool CanGroupWith(SignalSpec other)
+    {
+        return Owner.transform.parent.gameObject == other.Owner.transform.parent.gameObject // both owned by the same parent
+               && LocalName == other.LocalName // both have the same local name
+               && SimilarName(Owner.name, other.Owner.name); // both gameobjects have the same or similar names
+    }
+
+    /// <summary>
+    /// Used to determine if the names of two GameObjects are similar enough to be grouped together.
+    /// Tests for name equality, and chops off the last segment of the name if it contains a period.
+    /// </summary>
+    /// <returns></returns>
+    private static bool SimilarName(string a, string b)
+    {
+        if (!a.Contains("."))
+        {
+            return a == b;
+        }
+
+        // very slow way of doing this, should improve
+        var aSplit = string.Join('.', a.Split(".")[..^1]);
+        var bSplit = string.Join('.', b.Split(".")[..^1]);
+        return aSplit == bSplit;
+    }
 }
