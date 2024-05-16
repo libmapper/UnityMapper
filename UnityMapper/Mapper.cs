@@ -1068,9 +1068,20 @@ namespace Mapper
             mpr_sig_reserve_inst(this._obj, number, IntPtr.Zero, IntPtr.Zero);
             return this;
         }
-        public Signal ReserveInstance()
+        public Signal ReserveInstance(ulong? id = null)
         {
-            mpr_sig_reserve_inst(this._obj, 1, IntPtr.Zero, IntPtr.Zero);
+            if (id == null)
+            {
+                mpr_sig_reserve_inst(this._obj, 1, IntPtr.Zero, IntPtr.Zero);
+            }
+            else
+            {
+                var val = id.Value;
+                unsafe
+                {
+                    mpr_sig_reserve_inst(this._obj, 1, new IntPtr(&val), IntPtr.Zero);
+                }
+            }
             return this;
         }
 
