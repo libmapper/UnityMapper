@@ -1,6 +1,7 @@
 using Mapper;
 using UnityEngine;
 using UnityMapper.API;
+using Time = Mapper.Time;
 
 namespace UnityMapper.Instances;
 
@@ -13,8 +14,10 @@ public class SignalCollection
 {
     private Device _device;
     private Signal _signal;
-    private System.Collections.Generic.List<SignalSpec> _signals = [];
-    private Dictionary<ulong, Component> _instances = new();
+    private readonly Dictionary<ulong, SignalSpec> _signals = [];
+    private readonly Dictionary<ulong, Time> _lastUpdates = [];
+    private readonly Dictionary<ulong, Signal.Instance> _instances = [];
+    private ulong nextId = 10;
     
     /// <summary>
     /// 
@@ -22,10 +25,19 @@ public class SignalCollection
     /// <param name="device"></param>
     /// <param name="spec"></param>
     /// <param name="owner"></param>
-    public SignalCollection(Device device, SignalSpec spec, GameObject owner)
+    public SignalCollection(Device device, SignalSpec spec)
     {
         _device = device;
-        _signals.Add(spec);
+        Name = GetFullPathname(spec.Owner) + "/" + spec.LocalName;
+        _signal = device.AddSignal(Signal.Direction.Incoming, this.Name, spec.Property.GetVectorLength(), 
+            LibmapperDevice.CreateLibmapperTypeFromPrimitive(spec.Property.GetMappedType()), spec.Property.Units, 0);
+
+        var id = nextId++;
+        spec.AssignInstanceID(id);
+        _signals.Add(id, spec);
+        _signal.ReserveInstance(id);
+        _instances.Add(id, new Signal.Instance(_signal._obj, id));
+        _lastUpdates.Add(id, _device.GetTime());
     }
     
     /// <summary>
@@ -37,19 +49,53 @@ public class SignalCollection
     /// If this collection can accept the specified discovered signal
     /// </summary>
     /// <param name="other"></param>
-    /// <returns></returns>
     public bool CanAccept(SignalSpec other) => _signals[0].CanGroupWith(other);
     
     public void Update()
     {
-        // TODO
+        foreach (var id in _instances.Keys)
+        {
+            var newVal = _signal.GetValue(id);
+            if (newVal.Item2 > _lastUpdates[id])
+            {
+                _signals[id].Property.SetObject(newVal.Item1);
+                _lastUpdates[id] = newVal.Item2;
+            }
+            else
+            {
+                _instances[id].SetValue(_signals[id].Property.GetValue());
+                _lastUpdates[id].Set(_device.GetTime());
+            }
+        }
     }
 
     public void Add(SignalSpec toAdd)
     {
-        // TODO
+        if (!CanAccept(toAdd))
+        {
+            throw new InvalidOperationException("Cannot accept signal");
+        }
+
+        var id = nextId++;
+        toAdd.AssignInstanceID(id);
+        _signals.Add(id, toAdd);
+        _signal.ReserveInstance(id);
+        _instances.Add(id, new Signal.Instance(_signal._obj, id));
+        _lastUpdates.Add(id, _device.GetTime());
     }
-    
+
+
+    private static string GetFullPathname(GameObject obj)
+    {
+        var path = obj.name;
+        while (obj.transform.parent != null)
+        {
+            obj = obj.transform.parent.gameObject;
+            path = obj.name + "/" + path;
+        }
+
+        return path;
+    }
 }
 
 /// <summary>
@@ -71,6 +117,23 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// Accessor for the property on that specific object
     /// </summary>
     public IBoundProperty Property { get; private set; } = Property;
+
+    /// <summary>
+    /// Internal instance ID of this signal. Can only be set once.
+    /// </summary>
+    public ulong InstanceId { get; private set; } = 0;
+
+    private bool _hasBeenAsigned = false;
+    public void AssignInstanceID(ulong id)
+    {
+        if (_hasBeenAsigned)
+        {
+            throw new InvalidOperationException("Instance ID already assigned");
+        }
+
+        InstanceId = id;
+        _hasBeenAsigned = true;
+    }
     
     
     /// <summary>
