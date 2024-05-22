@@ -98,7 +98,7 @@ public class LibmapperDevice : MonoBehaviour
                 _lastReady = true;
                 foreach (var component in componentsToExpose)
                 {
-                    var maps = CreateMapping(component);
+                    var maps = ExtractProperties(component);
                 
                     // TODO: this is REALLY ugly, fix later
                     foreach (var mapped in maps)
@@ -124,7 +124,7 @@ public class LibmapperDevice : MonoBehaviour
                             wrappedMap = new WrappedBoundProperty(mapped, mapper);
                         }
                         
-                        RegisterProperty(wrappedMap);
+                        RegisterProperty(wrappedMap, component);
                     }
                 
                 }
@@ -144,7 +144,6 @@ public class LibmapperDevice : MonoBehaviour
     /// <summary>
     /// Either adds the property to a collection as an instance of an existing signal or creates a new signal
     /// </summary>
-    /// <param name="property"></param>
     private void RegisterProperty(IBoundProperty property, Component comp)
     {
         var spec = new SignalSpec(property.GetName(), comp.gameObject, property);
@@ -156,6 +155,9 @@ public class LibmapperDevice : MonoBehaviour
                 return;
             }
         }
+        
+        var collection = new SignalCollection(_device, spec);
+        _properties.Add(collection);
     }
     
     /// <summary>
@@ -238,7 +240,7 @@ public class LibmapperDevice : MonoBehaviour
     }
 
 
-    private System.Collections.Generic.List<IBoundProperty> CreateMapping(Component target)
+    private System.Collections.Generic.List<IBoundProperty> ExtractProperties(Component target)
     {
         if (_extractors.ContainsKey(target.GetType()))
         {
