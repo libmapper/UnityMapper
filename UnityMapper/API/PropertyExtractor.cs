@@ -42,9 +42,9 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
 {
     public List<IBoundProperty> ExtractProperties(Component target)
     {
-        var candidates = target.GetType().GetFields(BindingFlags.Instance)
-            .Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
-            .ToList();
+        var candidates = target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public);
+            /*.Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
+            .ToList();*/
         
         Debug.Log("Extracting properties from " + target.GetType());
         var l = new List<IBoundProperty>();

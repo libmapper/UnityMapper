@@ -55,12 +55,15 @@ public class SignalCollection
     {
         foreach (var id in _instances.Keys)
         {
+            //Debug.Log($"SignalCollection: Updating {id}");
             var newVal = _signal.GetValue(id);
-            if (newVal.Item2 > _lastUpdates[id])
+            if (newVal.Item2 > _lastUpdates[id] || true)
             {
-                if (newVal.Item1 == null) continue;
-                _signals[id].Property.SetObject(newVal.Item1);
+                //Debug.Log($"SignalCollection: Updating {id} to {newVal.Item1} (1)");
                 _lastUpdates[id] = newVal.Item2;
+                if (newVal.Item1 == null) continue;
+                //Debug.Log($"SignalCollection: Updating {id} to {newVal.Item1} (2)");
+                _signals[id].Property.SetObject(newVal.Item1);
             }
             else
             {
