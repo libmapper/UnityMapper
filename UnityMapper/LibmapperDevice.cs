@@ -29,9 +29,6 @@ public class LibmapperDevice : MonoBehaviour
     /// Whether or not to wait for Freeze() to be called before processing signals.
     /// </summary>
     [SerializeField] private bool useApi = false;
-    
-    [FormerlySerializedAs("_componentsToMap")] [SerializeField]
-    private System.Collections.Generic.List<Component> componentsToExpose = [];
 
     private PollJob _job;
 
@@ -91,11 +88,20 @@ public class LibmapperDevice : MonoBehaviour
             {
                 _handle.Value.Complete();
             }
-            if (_device.GetIsReady() && !_lastReady)
+
+            if (_device.GetIsReady())
             {
-                Debug.Log("Registering signals");
-                // device just became ready
-                _lastReady = true;
+                // find components in children
+                var componentsToExpose = new System.Collections.Generic.List<Component>();
+                foreach (var list in GetComponentsInChildren<LibmapperComponentList>())
+                {
+                    if (!list.visited)
+                    {
+                        componentsToExpose.AddRange(list.componentsToExpose);
+                    }
+                    list.visited = true;
+                }
+                
                 foreach (var component in componentsToExpose)
                 {
                     var maps = ExtractProperties(component);
@@ -129,6 +135,8 @@ public class LibmapperDevice : MonoBehaviour
                 
                 }
             }
+            
+            
             foreach (var collection in _properties)
             {
                 collection.Update();
@@ -151,6 +159,7 @@ public class LibmapperDevice : MonoBehaviour
         {
             if (existing.CanAccept(spec))
             {
+                Debug.Log($"Added {spec.Property.GetName()} to existing collection");
                 existing.Add(spec);
                 return;
             }
@@ -158,6 +167,7 @@ public class LibmapperDevice : MonoBehaviour
         
         var collection = new SignalCollection(_device, spec);
         _properties.Add(collection);
+        Debug.Log($"Created new collection for {spec.Property.GetName()}");
     }
     
     /// <summary>
@@ -204,7 +214,6 @@ public class LibmapperDevice : MonoBehaviour
         {
             throw new InvalidOperationException("Can't add new components after Freeze(). Make sure \"Use API\" is checked in the inspector.");
         }
-        componentsToExpose.Add(component);
     }
 
     /// <summary>

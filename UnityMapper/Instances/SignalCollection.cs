@@ -49,7 +49,7 @@ public class SignalCollection
     /// If this collection can accept the specified discovered signal
     /// </summary>
     /// <param name="other"></param>
-    public bool CanAccept(SignalSpec other) => _signals[0].CanGroupWith(other);
+    public bool CanAccept(SignalSpec other) => _signals[10].CanGroupWith(other);
     
     public void Update()
     {
@@ -58,6 +58,7 @@ public class SignalCollection
             var newVal = _signal.GetValue(id);
             if (newVal.Item2 > _lastUpdates[id])
             {
+                if (newVal.Item1 == null) continue;
                 _signals[id].Property.SetObject(newVal.Item1);
                 _lastUpdates[id] = newVal.Item2;
             }
