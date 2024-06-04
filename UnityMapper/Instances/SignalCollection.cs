@@ -85,6 +85,21 @@ public class SignalCollection
         _lastUpdates.Add(id, _device.GetTime());
     }
 
+    public void RemoveAllFromList(LibmapperComponentList target)
+    {
+        // If any signals are owned by this component, remove them
+        foreach (var id in _signals.Keys)
+        {
+            if (_signals[id].OwningList == target)
+            {
+                _signal.RemoveInstance(id);
+                _signals.Remove(id);
+                _instances.Remove(id);
+                _lastUpdates.Remove(id);
+            }
+        }
+    }
+
 
     private static string GetFullPathname(GameObject obj)
     {
