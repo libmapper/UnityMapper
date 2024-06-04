@@ -102,7 +102,7 @@ public class SignalCollection
 /// <summary>
 /// Contains uniquely identifying information about a signal. Used by a <see cref="SignalCollection"/> to group signals.
 /// </summary>
-public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Property)
+public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Property, LibmapperComponentList OwningList)
 {
     /// <summary>
     /// The name of this signal, relative to it's owning object. For example, a camera's FOV slider would be "Camera/fov"
@@ -113,6 +113,11 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// The GameObject that this property belongs to.
     /// </summary>
     public GameObject Owner { get; private set; } = Owner;
+
+    /// <summary>
+    /// The LibmapperComponentList used to discover this signal
+    /// </summary>
+    public LibmapperComponentList OwningList { get; private set; } = OwningList;
 
     /// <summary>
     /// Accessor for the property on that specific object
