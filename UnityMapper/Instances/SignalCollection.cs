@@ -88,15 +88,21 @@ public class SignalCollection
     public void RemoveAllFromList(LibmapperComponentList target)
     {
         // If any signals are owned by this component, remove them
+        var toRemove = new System.Collections.Generic.List<ulong>();
         foreach (var id in _signals.Keys)
         {
             if (_signals[id].OwningList == target)
             {
-                _signal.RemoveInstance(id);
-                _signals.Remove(id);
-                _instances.Remove(id);
-                _lastUpdates.Remove(id);
+                toRemove.Add(id);
             }
+        }
+        
+        foreach (var id in toRemove)
+        {
+            _signal.RemoveInstance(id);
+            _signals.Remove(id);
+            _instances.Remove(id);
+            _lastUpdates.Remove(id);
         }
     }
 
