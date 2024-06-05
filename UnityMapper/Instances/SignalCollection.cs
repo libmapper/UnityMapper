@@ -31,7 +31,12 @@ public class SignalCollection
         Name = GetFullPathname(spec.Owner) + "/" + spec.LocalName;
         _signal = device.AddSignal(Signal.Direction.Incoming, this.Name, spec.Property.GetVectorLength(), 
             LibmapperDevice.CreateLibmapperTypeFromPrimitive(spec.Property.GetMappedType()), spec.Property.Units, 0);
-
+        if (spec.Property.Bounds != null)
+        {
+            _signal.SetProperty(Property.Min, spec.Property.Bounds.Value.min);
+            _signal.SetProperty(Property.Max, spec.Property.Bounds.Value.max);
+        }
+        
         var id = nextId++;
         spec.AssignInstanceID(id);
         _signals.Add(id, spec);
