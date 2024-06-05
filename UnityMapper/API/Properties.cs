@@ -88,6 +88,17 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 
     public void SetObject(object value)
     {
+        if (Bounds != null)
+        {
+            value = value switch
+            {
+                // clamp value in bounds if it is a float double or int
+                float f => Mathf.Clamp(f, Bounds.Value.min, Bounds.Value.max),
+                double d => Math.Clamp(d, Bounds.Value.min, Bounds.Value.max),
+                int i => Mathf.Clamp(i, (int)Bounds.Value.min, (int)Bounds.Value.max),
+                _ => value
+            };
+        }
         info.SetValue(target, value);
     }
 
