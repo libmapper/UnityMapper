@@ -88,7 +88,7 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 
     public void SetObject(object value)
     {
-        if (Bounds != null)
+        if (Bounds != null && EnforceBounds)
         {
             value = value switch
             {
@@ -111,6 +111,8 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
     {
         return info.DeclaringType.Name + "/" + info.Name;
     }
+    
+    public bool EnforceBounds => info.GetCustomAttribute<SignalBoundsAttribute>()?.Enforced ?? false;
 
     public string? Units
     {
@@ -150,8 +152,11 @@ public class SignalUnitAttribute(string units) : Attribute
 /// </summary>
 /// <param name="min">Lower bound</param>
 /// <param name="max">Upper bound</param>
-public class SignalBoundsAttribute(float min, float max) : Attribute
+/// <param name="enforced">If Unitymapper should clamp values between these bounds</param>
+public class SignalBoundsAttribute(float min, float max, bool enforced = false) : Attribute
 {
     public float Min { get; } = min;
     public float Max { get; } = max;
+
+    public bool Enforced { get; } = enforced;
 }
