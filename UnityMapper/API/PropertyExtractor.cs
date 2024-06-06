@@ -50,6 +50,10 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
         var l = new List<IBoundProperty>();
         foreach (var prop in candidates)
         {
+            if (prop.GetCustomAttribute<MapperIgnoreAttribute>() != null)
+            {
+                continue;
+            }
             var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
             if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
             var mapped = new BoundClassField(prop, target);

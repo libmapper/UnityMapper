@@ -160,3 +160,12 @@ public class SignalBoundsAttribute(float min, float max, bool enforced = false) 
 
     public bool Enforced { get; } = enforced;
 }
+
+/// <summary>
+/// When applied to a field, UnityMapper will ignore it when extracting properties.
+/// </summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class MapperIgnoreAttribute : Attribute
+{
+    public MapperIgnoreAttribute() {}
+}
