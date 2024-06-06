@@ -82,7 +82,7 @@ public class LibmapperDevice : MonoBehaviour
                 // find components in children
                 foreach (var list in GetComponentsInChildren<LibmapperComponentList>())
                 {
-                    if (!list.visited)
+                    if (!list.Visited)
                         foreach (var component in list.componentsToExpose)
                         {
                             var maps = ExtractProperties(component);
@@ -119,7 +119,7 @@ public class LibmapperDevice : MonoBehaviour
                             };
                         }
 
-                    list.visited = true;
+                    list.Visited = true;
                 }
 
             foreach (var collection in _properties) collection.Update();
