@@ -141,6 +141,7 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 /// Only used by the reflection-based property extractor.
 /// </summary>
 /// <param name="units">Human-readable unit for this signal</param>
+[AttributeUsage(AttributeTargets.Field)]
 public class SignalUnitAttribute(string units) : Attribute
 {
     public string Units { get; } = units;
@@ -153,6 +154,7 @@ public class SignalUnitAttribute(string units) : Attribute
 /// <param name="min">Lower bound</param>
 /// <param name="max">Upper bound</param>
 /// <param name="enforced">If Unitymapper should clamp values between these bounds</param>
+[AttributeUsage(AttributeTargets.Field)]
 public class SignalBoundsAttribute(float min, float max, bool enforced = false) : Attribute
 {
     public float Min { get; } = min;
