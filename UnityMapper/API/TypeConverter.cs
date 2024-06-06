@@ -3,9 +3,9 @@ namespace UnityMapper.API;
 /// <summary>
 /// Converts from complex types to simple types that can be assigned to a signal.
 /// </summary>
-/// <typeparam name="T">Complex type</typeparam>
-/// <typeparam name="U">Primitive type, one of float, int, double, or an array</typeparam>
-public interface ITypeConverter<T, U> : ITypeConverter where T: notnull where U: notnull
+/// <typeparam name="TComplex">Complex type</typeparam>
+/// <typeparam name="TSimple">Primitive type, one of float, int, double, or an array</typeparam>
+public interface ITypeConverter<TComplex, TSimple> : ITypeConverter where TComplex: notnull where TSimple: notnull
 
 {
     /// <summary>
@@ -13,36 +13,36 @@ public interface ITypeConverter<T, U> : ITypeConverter where T: notnull where U:
     /// </summary>
     /// <param name="complex">The complex type to convert</param>
     /// <returns>A simple type that can be assigned to a signal</returns>
-    U CreateSimple(T complex);
+    TSimple CreateSimple(TComplex complex);
     
     /// <summary>
     /// Converts a simple type to a complex type.
     /// </summary>
     /// <param name="simple">The simple type to convert</param>
     /// <returns>A complex type</returns>
-    T CreateComplex(U simple);
+    TComplex CreateComplex(TSimple simple);
     
     
     object ITypeConverter.CreateSimpleObject(object complex)
     {
-        if (!(complex is T))
+        if (!(complex is TComplex))
         {
-            throw new ArgumentException($"Expected type {typeof(T)}, got {complex.GetType()}");
+            throw new ArgumentException($"Expected type {typeof(TComplex)}, got {complex.GetType()}");
         }
-        return CreateSimple((T) complex);
+        return CreateSimple((TComplex) complex);
     }
     
     object ITypeConverter.CreateComplexObject(object simple)
     {
-        if (!(simple is U))
+        if (!(simple is TSimple))
         {
-            throw new ArgumentException($"Expected type {typeof(U)}, got {simple.GetType()}");
+            throw new ArgumentException($"Expected type {typeof(TSimple)}, got {simple.GetType()}");
         }
-        return CreateComplex((U) simple);
+        return CreateComplex((TSimple) simple);
     }
     
-    Type ITypeConverter.ComplexType => typeof(T);
-    Type ITypeConverter.SimpleType => typeof(U);
+    Type ITypeConverter.ComplexType => typeof(TComplex);
+    Type ITypeConverter.SimpleType => typeof(TSimple);
 }
 
 
