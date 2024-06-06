@@ -20,11 +20,10 @@ public class SignalCollection
     private ulong nextId = 10;
     
     /// <summary>
-    /// 
+    /// Create a new SignalCollection with a single default instance.
     /// </summary>
-    /// <param name="device"></param>
-    /// <param name="spec"></param>
-    /// <param name="owner"></param>
+    /// <param name="device">Libmapper device this collection is a part of</param>
+    /// <param name="spec">The first signal instance to be created</param>
     public SignalCollection(Device device, SignalSpec spec)
     {
         _device = device;
