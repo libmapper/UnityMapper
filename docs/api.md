@@ -16,8 +16,7 @@ You may need to register both `TypeConverter` and `PropertyExtractor` to get the
 the `Builtin` namespace to see how UnityMapper handles common Unity types.
 
 ## Prerequisites
-On your Libmapper Device component, check the "Use API" box. This will make the device inactive until you call `Freeze()`,
- allowing you to register new extensions before the device starts.
+Create a custom class that derives from `LibmapperDevice`. This will allow you override the necessary methods to register your custom extensions.
 
 ## Type Converters
 Type converters are the simplest part of the API to implement. They allow you to tell UnityMapper how to convert your custom types to signals.
@@ -46,23 +45,13 @@ Let's break down what's happening here:
 - `VectorLength` is needed when you're returning an array of primitives. Libmapper only supports fixed-length vectors, so this
   will tell libmapper how many elements are in the vector. If you're returning a single value, this would read `public int VectorLength => 1;`.
 
-To register this type you have two options:
-1. Create a custom `MonoBehavior` deriving from `LibmapperDevice`, and override the `RegisterExtensions` method like so:
+To register your custom type converter, override `RegisterExtensions`:
 ```csharp
     public override void RegisterExtensions()
     {
         RegisterTypeConverter(new MyVector3Converter());
     }
 ```
-Note that this does **not** require "Use API" to be checked.
-
-2. Get a reference to the `LibmapperDevice` component and call the appropriate register method directly:
-```csharp
-    var libmapperDevice = GetComponent<LibmapperDevice>();
-    libmapperDevice.RegisterTypeMapper(new MyVector3Converter());
-    libmapperDevice.Freeze();
-```
-Make sure to call `Freeze()` after registering all your extensions, or the device won't start.
 
 ## Property Extractors
 Property extractors are a bit more complex than type converter, but they allow you to tell UnityMapper how to find the properties you want to expose.
@@ -118,17 +107,10 @@ unless your property is performance-critical.
 
 Hopefully, in the [future](https://github.com/EggAllocationService/libmapper-unity/issues/5), UnityMapper will be able to generate classes implementing IMappedProperty for you.
 
-To register this property extractor, you have the same two options as with type converters:
-1. Create a custom `MonoBehavior` deriving from `LibmapperDevice`, and override the `RegisterExtensions` method like so:
+To register this property extractor create a custom `RegisterExtensions` method and call `RegisterPropertyExtractor` like so:
 ```csharp
     public override void RegisterExtensions()
     {
         RegisterPropertyExtractor(new TransformExtractor());
     }
-```
-2. Get a reference to the `LibmapperDevice` component and call the appropriate register method directly:
-```csharp
-    var libmapperDevice = GetComponent<LibmapperDevice>();
-    libmapperDevice.RegisterPropertyExtractor(new TransformExtractor());
-    libmapperDevice.Freeze();
 ```
