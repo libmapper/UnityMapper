@@ -38,7 +38,7 @@ public class LibmapperDevice : MonoBehaviour
         _frozen = false; // just in case
 
         _device = new Device(gameObject.name);
-        _job = new PollJob(_device._obj, pollTime);
+        _job = new PollJob(_device.NativePtr, pollTime);
 
         // Builtin extractors
         RegisterExtractor(new TransformExtractor());
@@ -70,7 +70,7 @@ public class LibmapperDevice : MonoBehaviour
             else
                 _handle.Value.Complete();
 
-            if (_device.GetIsReady())
+            if (_device.Ready)
                 // find components in children
                 foreach (var list in GetComponentsInChildren<LibmapperComponentList>())
                 {
@@ -86,7 +86,7 @@ public class LibmapperDevice : MonoBehaviour
                                 var kind = mapped.GetMappedType();
                                 var type = CreateLibmapperTypeFromPrimitive(kind);
 
-                                if (type == Mapper.Type.Null)
+                                if (type == MapperType.Null)
                                 {
                                     var mapper = _converters[wrappedMap.GetMappedType()];
                                     if (mapper == null)
@@ -94,7 +94,7 @@ public class LibmapperDevice : MonoBehaviour
                                                                     wrappedMap.GetMappedType());
 
                                     type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
-                                    if (type == Mapper.Type.Null)
+                                    if (type == MapperType.Null)
                                         throw new ArgumentException("Mapper type is not a simple type: " +
                                                                     mapper.GetType());
 
@@ -181,16 +181,16 @@ public class LibmapperDevice : MonoBehaviour
         throw new NotSupportedException("Override RegisterExtensions to add new extractors or converters");
     }
 
-    public static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
+    public static MapperType CreateLibmapperTypeFromPrimitive(Type t)
     {
         if (t.IsArray) t = t.GetElementType();
         if (t == typeof(float))
-            return Mapper.Type.Float;
+            return MapperType.Float;
         if (t == typeof(int))
-            return Mapper.Type.Int32;
+            return MapperType.Int32;
         if (t == typeof(double))
-            return Mapper.Type.Double;
-        return Mapper.Type.Null;
+            return MapperType.Double;
+        return MapperType.Null;
     }
 
 

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Mapper;
 using UnityEngine;
 
 namespace UnityMapper.API;
@@ -55,10 +56,10 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
                 continue;
             }
             var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
-            if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
+            if (baseType == MapperType.Null && !_converters.ContainsKey(prop.FieldType)) continue;
             var mapped = new BoundClassField(prop, target);
                 
-            if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
+            if (baseType == MapperType.Null) // this type needs to be wrapped in order to be turned into a signal
             {
                 var converter = _converters[prop.FieldType];
                 l.Add(new WrappedBoundProperty(mapped, converter));

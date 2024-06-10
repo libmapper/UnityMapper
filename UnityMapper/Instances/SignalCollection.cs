@@ -16,7 +16,6 @@ public class SignalCollection
     private Signal _signal;
     private readonly Dictionary<ulong, SignalSpec> _signals = [];
     private readonly Dictionary<ulong, Time> _lastUpdates = [];
-    private readonly Dictionary<ulong, Signal.Instance> _instances = [];
     private ulong nextId = 10;
     
     /// <summary>
@@ -39,9 +38,8 @@ public class SignalCollection
         var id = nextId++;
         spec.AssignInstanceID(id);
         _signals.Add(id, spec);
-        _signal.ReserveInstance(id);
-        _instances.Add(id, new Signal.Instance(_signal._obj, id));
-        _lastUpdates.Add(id, _device.GetTime());
+        _signal.ReserveInstance((int) id);
+        _lastUpdates.Add(id, _device.Time);
     }
     
     /// <summary>
@@ -57,7 +55,7 @@ public class SignalCollection
     
     public void Update()
     {
-        foreach (var id in _instances.Keys)
+        foreach (var id in _signals.Keys)
         {
             var newVal = _signal.GetValue(id);
             if (newVal.Item2 > _lastUpdates[id] || true)
@@ -68,8 +66,7 @@ public class SignalCollection
             }
             else
             {
-                _instances[id].SetValue(_signals[id].Property.GetValue());
-                _lastUpdates[id].Set(_device.GetTime());
+                _signal.SetValue(_signals[id].Property.GetValue(), id);
             }
         }
     }
@@ -84,9 +81,8 @@ public class SignalCollection
         var id = nextId++;
         toAdd.AssignInstanceID(id);
         _signals.Add(id, toAdd);
-        _signal.ReserveInstance(id);
-        _instances.Add(id, new Signal.Instance(_signal._obj, id));
-        _lastUpdates.Add(id, _device.GetTime());
+        _signal.ReserveInstance((int) id);
+        _lastUpdates.Add(id, _device.Time);
     }
 
     public void RemoveAllFromList(LibmapperComponentList target)
@@ -105,7 +101,6 @@ public class SignalCollection
         {
             _signal.RemoveInstance(id);
             _signals.Remove(id);
-            _instances.Remove(id);
             _lastUpdates.Remove(id);
         }
     }
