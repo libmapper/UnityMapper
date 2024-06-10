@@ -16,11 +16,6 @@ public class LibmapperDevice : MonoBehaviour
     [SerializeField] private int pollTime = 1;
     [SerializeField] private bool nonBlockingPolling;
 
-    /// <summary>
-    ///     Whether or not to wait for Freeze() to be called before processing signals.
-    /// </summary>
-    [SerializeField] private bool useApi;
-
     private readonly Dictionary<Type, ITypeConverter> _converters = new();
 
     private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
@@ -40,8 +35,7 @@ public class LibmapperDevice : MonoBehaviour
 
     public void Start()
     {
-        var tmp = _frozen;
-        _frozen = false; // in case another script called Freeze() before unity calls Start()
+        _frozen = false; // just in case
 
         _device = new Device(gameObject.name);
         _job = new PollJob(_device._obj, pollTime);
@@ -61,9 +55,7 @@ public class LibmapperDevice : MonoBehaviour
 
         RegisterExtensions();
 
-        _frozen = tmp; // restore previous frozen state;
-
-        if (!useApi) Freeze();
+        _frozen = true;
     }
 
     // Use physics update for consistent timing
@@ -160,7 +152,7 @@ public class LibmapperDevice : MonoBehaviour
     {
         if (_frozen)
             throw new InvalidOperationException(
-                "Can't register new extractors after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+                "Can't register new extractors after construction.");
         if (typeof(T) == typeof(Component))
             throw new ArgumentException("Can't override generic extractor for Component type");
         _extractors[typeof(T)] = extractor;
@@ -176,16 +168,17 @@ public class LibmapperDevice : MonoBehaviour
     {
         if (_frozen)
             throw new InvalidOperationException(
-                "Can't register new converters after Freeze(). Make sure \"Use API\" is checked in the inspector.");
+                "Can't register new converters after construction.");
         _converters[typeof(T)] = converter;
     }
 
     /// <summary>
     ///     Freeze the device, preventing new extractors, mappers, or components from being added.
     /// </summary>
+    [Obsolete("Override RegisterExtensions to add new extractors or converters")]
     public void Freeze()
     {
-        _frozen = true;
+        throw new NotSupportedException("Override RegisterExtensions to add new extractors or converters");
     }
 
     public static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
