@@ -112,28 +112,11 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
         return info.DeclaringType.Name + "/" + info.Name;
     }
     
-    public bool EnforceBounds => info.GetCustomAttribute<SignalBoundsAttribute>()?.Enforced ?? false;
+    public bool EnforceBounds { get; private set; } = info.GetCustomAttribute<SignalBoundsAttribute>()?.Enforced ?? false;
+    public string? Units { get; private set; } = info.GetCustomAttribute<SignalUnitAttribute>()?.Units;
 
-    public string? Units
-    {
-        get {
-            var attr = info.GetCustomAttribute<SignalUnitAttribute>();
-            return attr?.Units;
-        }
-    }
-    
-    public (float min, float max)? Bounds
-    {
-        get
-        {
-            var attr = info.GetCustomAttribute<SignalBoundsAttribute>();
-            if (attr == null)
-            {
-                return null;
-            }
-            return (attr.Min, attr.Max);
-        }
-    }
+    public (float min, float max)? Bounds { get; private set; } =
+        info.GetCustomAttribute<SignalBoundsAttribute>()?.Bounds;
 }
 
 /// <summary>
@@ -159,6 +142,8 @@ public class SignalBoundsAttribute(float min, float max, bool enforced = false) 
 {
     public float Min { get; } = min;
     public float Max { get; } = max;
+    
+    public (float, float) Bounds => (Min, Max);
 
     public bool Enforced { get; } = enforced;
 }
