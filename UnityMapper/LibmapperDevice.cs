@@ -181,18 +181,6 @@ public class LibmapperDevice : MonoBehaviour
     }
 
     /// <summary>
-    ///     Add a new component to be exposed by the device.
-    /// </summary>
-    /// <param name="component"></param>
-    /// <exception cref="InvalidOperationException">If called while the device is frozen</exception>
-    public void AddComponent(Component component)
-    {
-        if (_frozen)
-            throw new InvalidOperationException(
-                "Can't add new components after Freeze(). Make sure \"Use API\" is checked in the inspector.");
-    }
-
-    /// <summary>
     ///     Freeze the device, preventing new extractors, mappers, or components from being added.
     /// </summary>
     public void Freeze()
