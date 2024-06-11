@@ -20,6 +20,7 @@ public class LibmapperComponentList : MonoBehaviour
 public enum SignalType
 {
     ReadOnly,
+    [InspectorName("Read and Write")]
     ReadWrite,
     WriteOnly
 }
