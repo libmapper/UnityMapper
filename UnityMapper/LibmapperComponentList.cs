@@ -5,6 +5,8 @@ namespace UnityMapper;
 public class LibmapperComponentList : MonoBehaviour
 {
     public event EventHandler<List<Component>>? Destroyed; 
+    
+    public bool isEphemeral = false;
     public List<Component> componentsToExpose = [];
     internal bool Visited = false;
 

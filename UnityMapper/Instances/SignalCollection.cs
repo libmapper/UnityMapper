@@ -40,6 +40,7 @@ public class SignalCollection
         _signals.Add(id, spec);
         _signal.ReserveInstance((int) id);
         _lastUpdates.Add(id, _device.Time);
+        _signal.SetProperty(Property.Ephemeral, false);
     }
     
     /// <summary>
@@ -128,6 +129,11 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// The name of this signal, relative to it's owning object. For example, a camera's FOV slider would be "Camera/fov"
     /// </summary>
     public string LocalName { get; private set; } = LocalName;
+
+    /// <summary>
+    /// Whether this signal is ephemeral or not. 
+    /// </summary>
+    public bool Ephemeral => OwningList.isEphemeral;
 
     /// <summary>
     /// The GameObject that this property belongs to.
