@@ -14,6 +14,7 @@ public class SignalCollection
 {
     private Device _device;
     private Signal _signal;
+    private SignalSpec _spec;
     private readonly Dictionary<ulong, SignalSpec> _signals = [];
     private readonly Dictionary<ulong, Time> _lastUpdates = [];
     private ulong nextId = 10;
@@ -25,6 +26,7 @@ public class SignalCollection
     /// <param name="spec">The first signal instance to be created</param>
     public SignalCollection(Device device, SignalSpec spec)
     {
+        _spec = spec;
         _device = device;
         Name = GetFullPathname(spec.Owner) + "/" + spec.LocalName;
         _signal = device.AddSignal(Signal.Direction.Incoming, Name, spec.Property.GetVectorLength(), 
@@ -59,14 +61,17 @@ public class SignalCollection
         foreach (var id in _signals.Keys)
         {
             var newVal = _signal.GetValue(id);
-            if (newVal.Item2 > _lastUpdates[id] || true)
+            if ((newVal.Item2 > _lastUpdates[id] || _spec.Type == SignalType.WriteOnly) 
+                && _spec.Type != SignalType.ReadOnly) // only read from network if this signal is not a read-only signal 
             {
+                // read value from network
                 _lastUpdates[id] = newVal.Item2;
                 if (newVal.Item1 == null) continue;
                 _signals[id].Property.SetObject(newVal.Item1);
             }
             else
             {
+                // push value to network
                 _signal.SetValue(_signals[id].Property.GetValue(), id);
             }
         }
@@ -134,6 +139,11 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// Whether this signal is ephemeral or not. 
     /// </summary>
     public bool Ephemeral => OwningList.isEphemeral;
+    
+    /// <summary>
+    /// Read/write mode of this signal
+    /// </summary>
+    public SignalType Type => OwningList.type;
 
     /// <summary>
     /// The GameObject that this property belongs to.

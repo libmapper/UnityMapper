@@ -7,6 +7,7 @@ public class LibmapperComponentList : MonoBehaviour
     public event EventHandler<List<Component>>? Destroyed; 
     
     public bool isEphemeral = false;
+    public SignalType type = SignalType.ReadWrite;
     public List<Component> componentsToExpose = [];
     internal bool Visited = false;
 
@@ -14,4 +15,11 @@ public class LibmapperComponentList : MonoBehaviour
     {
         Destroyed?.Invoke(this, componentsToExpose);
     }
+}
+
+public enum SignalType
+{
+    ReadOnly,
+    ReadWrite,
+    WriteOnly
 }
