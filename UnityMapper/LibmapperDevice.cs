@@ -31,7 +31,7 @@ public class LibmapperDevice : MonoBehaviour
 
     private bool _lastReady = false;
 
-    private readonly System.Collections.Generic.List<SignalCollection> _properties = [];
+    private readonly List<SignalCollection> _properties = [];
 
     public void Start()
     {
@@ -194,7 +194,7 @@ public class LibmapperDevice : MonoBehaviour
     }
 
 
-    private System.Collections.Generic.List<IBoundProperty> ExtractProperties(Component target)
+    private List<IBoundProperty> ExtractProperties(Component target)
     {
         if (_extractors.ContainsKey(target.GetType())) return _extractors[target.GetType()].ExtractProperties(target);
 

@@ -27,7 +27,7 @@ public class SignalCollection
     {
         _device = device;
         Name = GetFullPathname(spec.Owner) + "/" + spec.LocalName;
-        _signal = device.AddSignal(Signal.Direction.Incoming, this.Name, spec.Property.GetVectorLength(), 
+        _signal = device.AddSignal(Signal.Direction.Incoming, Name, spec.Property.GetVectorLength(), 
             LibmapperDevice.CreateLibmapperTypeFromPrimitive(spec.Property.GetMappedType()), spec.Property.Units, 0);
         if (spec.Property.Bounds != null)
         {
@@ -88,7 +88,7 @@ public class SignalCollection
     public void RemoveAllFromList(LibmapperComponentList target)
     {
         // If any signals are owned by this component, remove them
-        var toRemove = new System.Collections.Generic.List<ulong>();
+        var toRemove = new List<ulong>();
         foreach (var id in _signals.Keys)
         {
             if (_signals[id].OwningList == target)
