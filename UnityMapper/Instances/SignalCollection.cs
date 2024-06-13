@@ -29,7 +29,7 @@ public class SignalCollection
         _spec = spec;
         _device = device;
         Name = GetFullPathname(spec.Owner) + "/" + spec.LocalName;
-        _signal = device.AddSignal(Signal.Direction.Incoming, Name, spec.Property.GetVectorLength(), 
+        _signal = device.AddSignal(spec.Type == SignalType.ReadOnly ? Signal.Direction.Outgoing : Signal.Direction.Incoming, Name, spec.Property.GetVectorLength(), 
             LibmapperDevice.CreateLibmapperTypeFromPrimitive(spec.Property.GetMappedType()), spec.Property.Units, 0);
         if (spec.Property.Bounds != null)
         {
