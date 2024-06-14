@@ -103,14 +103,12 @@ public class LibmapperDevice : MonoBehaviour
 
                                 RegisterProperty(wrappedMap, component, list);
                             }
-
-                            list.Destroyed += (sender, _) =>
-                            {
-                                foreach (var signal in _properties)
-                                    signal.RemoveAllFromList((LibmapperComponentList) sender);
-                            };
                         }
-
+                    list.Destroyed += (sender, _) =>
+                    {
+                        foreach (var signal in _properties)
+                            signal.RemoveAllFromList((LibmapperComponentList) sender);
+                    };
                     list.Visited = true;
                 }
 
