@@ -19,7 +19,7 @@ the `Builtin` namespace to see how UnityMapper handles common Unity types.
 Create a custom class that derives from `LibmapperDevice`. This will allow you override the necessary methods to register your custom extensions.
 
 ## Type Converters
-Type converters are the simplest part of the API to implement. They allow you to tell UnityMapper how to convert your custom types to signals.
+Type converters are the simplest part of the API to implement. They allow you to tell UnityMapper how to convert your custom types to simple numerical values.
 
 An example implementation for Unity's `Vector3` type is shown below:
 ```csharp
@@ -60,7 +60,7 @@ Here's a (simplified) example implementation for Unity's `Transform` component:
 ```csharp
 public class TransformExtractor : IPropertyExtractor<Transform>
 {
-    public List<IMappedProperty> ExtractProperties(Transform component)
+    public List<IBoundProperty> ExtractProperties(Transform component)
     {
         return
         [
@@ -72,9 +72,15 @@ public class TransformExtractor : IPropertyExtractor<Transform>
 ```
 The `PropertyExtractor` itself is actually fairly simple. You need to specify what kind of Component it supports in the generic type, and implement the `ExtractProperties` method.
 
-The `MappedPosition` class is also pretty straightforward:
+You need to return a set of `IBoundProperty` objects. These objects are what UnityMapper uses to actually get and set the values of the properties you're exposing.
+Each `IBoundProperty` should contain a reference to the Unity component and some metadata, an example for a unity `Transform` is seen below:
+
+> [!IMPORTANT]  
+> Note that `GetVectorLength` returns one in the below example, even though a Transform is a 3-dimensional vector. This is correct because you're only returning one `Vector3`. The `ITypeConverter` will convert this to a
+> `float[3]`, which will override this vector length property.
+
 ```csharp
-internal class MappedPosition(Transform transform) : IMappedProperty
+internal class BoundPosition(Transform transform) : IBoundProperty
 {
     public void SetObject(object val)
     {
@@ -101,13 +107,15 @@ internal class MappedPosition(Transform transform) : IMappedProperty
     }
 }
 ```
+
+
 Note that this implementation is actually different from the one in the source code. The real implementation actually maps directly to a `float[]`,
 instead of letting UnityMapper do the additional step of converting the `Vector3`. This is a bit faster in practice, but you can likely just use a built-in or custom type converter
 unless your property is performance-critical.
 
 Hopefully, in the [future](https://github.com/EggAllocationService/libmapper-unity/issues/5), UnityMapper will be able to generate classes implementing IMappedProperty for you.
 
-To register this property extractor create a custom `RegisterExtensions` method and call `RegisterPropertyExtractor` like so:
+To register your property extractor override the `RegisterExtensions` method and call `RegisterPropertyExtractor` like so:
 ```csharp
     public override void RegisterExtensions()
     {
