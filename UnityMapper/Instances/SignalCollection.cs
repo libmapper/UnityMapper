@@ -54,7 +54,7 @@ public class SignalCollection
     /// If this collection can accept the specified discovered signal
     /// </summary>
     /// <param name="other"></param>
-    public bool CanAccept(SignalSpec other) => _signals[10].CanGroupWith(other);
+    public bool CanAccept(SignalSpec other) => _spec.CanGroupWith(other);
     
     public void Update()
     {
