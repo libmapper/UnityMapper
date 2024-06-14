@@ -139,6 +139,12 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// Whether this signal is ephemeral or not. 
     /// </summary>
     public bool Ephemeral => OwningList.isEphemeral;
+
+    /// <summary>
+    /// Whether this signal can be instanced or not.
+    /// If false, CanGroupWith(SignalSpec) always returns false.
+    /// </summary>
+    public bool CanInstance => OwningList.canInstance;
     
     /// <summary>
     /// Read/write mode of this signal
@@ -184,6 +190,10 @@ public record SignalSpec(string LocalName, GameObject Owner, IBoundProperty Prop
     /// <param name="other">Another signal to test for similarity</param>
     public bool CanGroupWith(SignalSpec other)
     {
+        if (!CanInstance) {
+            return false;
+        }
+        
         return Owner.transform.parent.gameObject == other.Owner.transform.parent.gameObject // both owned by the same parent
                && LocalName == other.LocalName // both have the same local name
                && SimilarName(Owner.name, other.Owner.name); // both gameobjects have the same or similar names
