@@ -88,6 +88,17 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 
     public void SetObject(object value)
     {
+        if (Bounds != null && EnforceBounds)
+        {
+            value = value switch
+            {
+                // clamp value in bounds if it is a float double or int
+                float f => Mathf.Clamp(f, Bounds.Value.min, Bounds.Value.max),
+                double d => Math.Clamp(d, Bounds.Value.min, Bounds.Value.max),
+                int i => Mathf.Clamp(i, (int)Bounds.Value.min, (int)Bounds.Value.max),
+                _ => value
+            };
+        }
         info.SetValue(target, value);
     }
 
@@ -100,27 +111,12 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
     {
         return info.DeclaringType.Name + "/" + info.Name;
     }
-
-    public string? Units
-    {
-        get {
-            var attr = info.GetCustomAttribute<SignalUnitAttribute>();
-            return attr?.Units;
-        }
-    }
     
-    public (float min, float max)? Bounds
-    {
-        get
-        {
-            var attr = info.GetCustomAttribute<SignalBoundsAttribute>();
-            if (attr == null)
-            {
-                return null;
-            }
-            return (attr.Min, attr.Max);
-        }
-    }
+    public bool EnforceBounds { get; private set; } = info.GetCustomAttribute<SignalBoundsAttribute>()?.Enforced ?? false;
+    public string? Units { get; private set; } = info.GetCustomAttribute<SignalUnitAttribute>()?.Units;
+
+    public (float min, float max)? Bounds { get; private set; } =
+        info.GetCustomAttribute<SignalBoundsAttribute>()?.Bounds;
 }
 
 /// <summary>
@@ -128,6 +124,7 @@ public class BoundClassField(FieldInfo info, Component target) : IBoundProperty
 /// Only used by the reflection-based property extractor.
 /// </summary>
 /// <param name="units">Human-readable unit for this signal</param>
+[AttributeUsage(AttributeTargets.Field)]
 public class SignalUnitAttribute(string units) : Attribute
 {
     public string Units { get; } = units;
@@ -139,8 +136,23 @@ public class SignalUnitAttribute(string units) : Attribute
 /// </summary>
 /// <param name="min">Lower bound</param>
 /// <param name="max">Upper bound</param>
-public class SignalBoundsAttribute(float min, float max) : Attribute
+/// <param name="enforced">If Unitymapper should clamp values between these bounds</param>
+[AttributeUsage(AttributeTargets.Field)]
+public class SignalBoundsAttribute(float min, float max, bool enforced = false) : Attribute
 {
     public float Min { get; } = min;
     public float Max { get; } = max;
+    
+    public (float, float) Bounds => (Min, Max);
+
+    public bool Enforced { get; } = enforced;
+}
+
+/// <summary>
+/// When applied to a field, UnityMapper will ignore it when extracting properties.
+/// </summary>
+[AttributeUsage(AttributeTargets.Field)]
+public class MapperIgnoreAttribute : Attribute
+{
+    public MapperIgnoreAttribute() {}
 }

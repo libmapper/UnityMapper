@@ -30,17 +30,23 @@ for `Libmapper Device`.
 The component exposes a few properties:
 - `Poll Time`: The amount of time in milliseconds that libmapper will poll for events at once.
    The value you want depends on your target framerate and what your fixed timestep is set to. 1 ms is a good starting point.
-- `Exposed Components`: The real meat and potatos of the  component, explained below:
 - `Non Blocking Polling`: Use libmapper's non-blocking polling feature on the main thread instead of scheduling a job. `Poll Time`
    will be ignored if this is enabled. Note that this seems to have some latency variation issues that are being investigated.
+- `Use API`: If checked, the device will not start until you call `Freeze()`. This allows you to register custom type converters
+   and property extractors before the device is initalized.
 
-### Exposed Components
-This is an array containing a list of components libmapper should inspect to find exposed properties that will be
-converted into signals. The components do not need to be owned by the `GameObject` that libmapper is attached to,
-so you could have one libmapper device for your entire scene or one per object, it's up to you.
+### Exposing Components
 
-To get started, simply drag a component onto the list's title to automatically have it added. At the moment, the
-following components have special handling:
+Your GameObject with the `Libmapper Device` shoud be a parent to any GameObjects you want to expose. The `Libmapper Device` will
+search for any children with the `Libmapper Component List` component and scan them.
+
+The `Libmapper Component List` component allows you to specify which components you want to expose. Simply drag and drop any component from the
+GameObject you want to expose onto the list, and as long as it is a child or descendent of the GameObject with the `Libmapper Device`, it will be exposed as a signal.
+
+If there are properties with similar names at a similar path (e.g cloned objects next to each other in the hierarchy),
+UnityMapper will express these as instances of the same signal. UnityMapper will group objects with the same name, dropping a `.[0-9]+` suffix.
+
+At the moment, the following components have special handling:
 - `Transform`: Maps to two three-component vectors for location and scale, and one four-component vector for rotation (Quaternion).
 - `Camera`: Provides a single float for the camera's field of view.
 - `AudioSource`: Provides two floats for the volume and pitch of the audio source.
@@ -51,23 +57,15 @@ You can add your own behavior to this list or override existing behavior, see [a
 #### Property Discovery
 
 If no special handling exists for your component type, libmapper will use reflection to discover mappable public fields.
-Mappability is determined by the following criteria:
+Discoverability is determined by the following criteria:
 - The field is not static
+- The field is either public or has the `[SerializeField]` attribute
+- The field does not have the `[MapperIgnore]` attribute
 - The field is not readonly
-- The field is not a property (has a defined getter and setter)
-- The field is one of these types:
+- The field is one of these types (or a registered `ITypeConverter` can convert it to one of these):
   - `int` or `int[]`
   - `float` or `float[]`
   - `double` or `double[]`
-    - In the future, you will be able to register type adapters with libmapper so you can use the default property discoverer
-      with more complex types.
-
-Be careful with arrays, as libmapper does not support arrays of changing size. Also ensure that arrays are initialized to their
-maximum size when they are constructed, for example:
-```csharp
-public float[] myArray = new float[3]; // good
-public float[] myArray; // bad, libmapper can't infer vector size
-```
 
 ### Metadata
 Libmapper supports adding metadata to your signals, namely a unit and minimum/maximum bounds. If using a custom `PropertyExtractor`, implement
@@ -79,3 +77,9 @@ If you're using the reflection-based property extractor (the default), you can u
     public float hue = 0.0f;
 ```
 
+You can also tell UnityMapper to automatically clamp values to the bounds you've set by setting the `enforce` parameter on the `SignalBounds` attribute:
+```csharp
+[SignalBounds(0f, 1f, enforce: true)]
+public float bounciness = 0.5f;
+```
+Note that this only works when using the reflection-based property extractor, and has no effect for array types.

@@ -1,55 +1,51 @@
+using Mapper;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using UnityEngine;
 using UnityMapper.API;
 using UnityMapper.Builtin;
+using UnityMapper.Instances;
+using Type = System.Type;
 
 namespace UnityMapper;
-using System.Reflection;
-using Mapper;
-using UnityEngine;
-using UnityEngine.Serialization;
-using Type = System.Type;
+
+using Type = Type;
 
 public class LibmapperDevice : MonoBehaviour
 {
-    
-    private Device _device;
-    
-    private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
-    private readonly Dictionary<Type, ITypeConverter> _converters = new();
-    private bool _frozen = false; // when frozen, no new extractors, mappers, or signals can be added
-
-    private System.Collections.Generic.List<(Signal, IBoundProperty, Mapper.Time lastChanged)> _properties = [];
-
     [SerializeField] private int pollTime = 1;
-    [SerializeField] private bool nonBlockingPolling = false;
-    
-    /// <summary>
-    /// Whether or not to wait for Freeze() to be called before processing signals.
-    /// </summary>
-    [SerializeField] private bool useApi = false;
-    
-    [FormerlySerializedAs("_componentsToMap")] [SerializeField]
-    private System.Collections.Generic.List<Component> componentsToExpose = [];
+    [SerializeField] private bool nonBlockingPolling;
+
+    private readonly Dictionary<Type, ITypeConverter> _converters = new();
+
+    private readonly Dictionary<Type, IPropertyExtractor> _extractors = new();
+
+    private DefaultPropertyExtractor? _defaultExtractor;
+
+    private Device _device;
+    private bool _frozen; // when frozen, no new extractors, mappers, or signals can be added
+    private JobHandle? _handle;
 
     private PollJob _job;
 
-    private DefaultPropertyExtractor? _defaultExtractor = null;
-    
+
+    private bool _lastReady = false;
+
+    private readonly List<SignalCollection> _properties = [];
+
     public void Start()
     {
-        var tmp = _frozen;
-        _frozen = false; // in case another script called Freeze() before unity calls Start()
-        
+        _frozen = false; // just in case
+
         _device = new Device(gameObject.name);
-        _job = new PollJob(_device._obj, pollTime);
-                
+        _job = new PollJob(_device.NativePtr, pollTime);
+
         // Builtin extractors
         RegisterExtractor(new TransformExtractor());
         RegisterExtractor(new AudioSourceExtractor());
         RegisterExtractor(new CameraExtractor());
         RegisterExtractor(new LightExtractor());
-        
+
         // Builtin type converters
         RegisterTypeConverter(new Vector3Converter());
         RegisterTypeConverter(new Vector2Converter());
@@ -58,132 +54,112 @@ public class LibmapperDevice : MonoBehaviour
         RegisterTypeConverter(new BoolConverter());
 
         RegisterExtensions();
-        
-        _frozen = tmp; // restore previous frozen state;
-        
-        if (!useApi)
+
+        _frozen = true;
+    }
+
+    // Use physics update for consistent timing
+    private void FixedUpdate()
+    {
+        if (!_frozen) return; // wait until Freeze() is called to start polling
+
+        if (_handle != null || nonBlockingPolling)
         {
-            Freeze();
+            if (nonBlockingPolling)
+                _device.Poll();
+            else
+                _handle.Value.Complete();
+
+            if (_device.Ready)
+                // find components in children
+                foreach (var list in GetComponentsInChildren<LibmapperComponentList>())
+                {
+                    if (!list.Visited)
+                        foreach (var component in list.componentsToExpose)
+                        {
+                            var maps = ExtractProperties(component);
+
+                            // TODO: this is REALLY ugly, fix later
+                            foreach (var mapped in maps)
+                            {
+                                var wrappedMap = mapped; // wrapped version to primitive-ize type
+                                var kind = mapped.GetMappedType();
+                                var type = CreateLibmapperTypeFromPrimitive(kind);
+
+                                if (type == MapperType.Null)
+                                {
+                                    var mapper = _converters[wrappedMap.GetMappedType()];
+                                    if (mapper == null)
+                                        throw new ArgumentException("No mapper found for type: " +
+                                                                    wrappedMap.GetMappedType());
+
+                                    type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
+                                    if (type == MapperType.Null)
+                                        throw new ArgumentException("Mapper type is not a simple type: " +
+                                                                    mapper.GetType());
+
+                                    wrappedMap = new WrappedBoundProperty(mapped, mapper);
+                                }
+
+                                RegisterProperty(wrappedMap, component, list);
+                            }
+
+                            list.Destroyed += (sender, _) =>
+                            {
+                                foreach (var signal in _properties)
+                                    signal.RemoveAllFromList((LibmapperComponentList) sender);
+                            };
+                        }
+
+                    list.Visited = true;
+                }
+
+            foreach (var collection in _properties) collection.Update();
         }
+
+        if (!nonBlockingPolling) _handle = _job.Schedule();
     }
 
     public virtual void RegisterExtensions()
     {
-        
     }
-    
-    
-    private bool _lastReady = false;
-    private JobHandle? _handle;
-    // Use physics update for consistent timing
-    void FixedUpdate()
-    {
-        if (!_frozen) return; // wait until Freeze() is called to start polling
-        
-        if (_handle != null || nonBlockingPolling)
-        {
-            if (nonBlockingPolling)
-            {
-                _device.Poll();
-            }
-            else
-            {
-                _handle.Value.Complete();
-            }
-            if (_device.GetIsReady() && !_lastReady)
-            {
-                Debug.Log("Registering signals");
-                // device just became ready
-                _lastReady = true;
-                foreach (var component in componentsToExpose)
-                {
-                    var maps = CreateMapping(component);
-                
-                    // TODO: this is REALLY ugly, fix later
-                    foreach (var mapped in maps)
-                    {
-                        var wrappedMap = mapped; // wrapped version to primitive-ize type
-                        var kind = mapped.GetMappedType();
-                        var type = CreateLibmapperTypeFromPrimitive(kind);
 
-                        if (type == Mapper.Type.Null)
-                        {
-                            var mapper = _converters[wrappedMap.GetMappedType()];
-                            if (mapper == null)
-                            {
-                                throw new ArgumentException("No mapper found for type: " + wrappedMap.GetMappedType());
-                            }
-
-                            type = CreateLibmapperTypeFromPrimitive(mapper.SimpleType);
-                            if (type == Mapper.Type.Null)
-                            {
-                                throw new ArgumentException("Mapper type is not a simple type: " + mapper.GetType());
-                            }
-                            
-                            wrappedMap = new WrappedBoundProperty(mapped, mapper);
-                        }
-                        
-                        Debug.Log("Registered libmapper signal of type: " + type + " with length: " + wrappedMap.GetVectorLength());
-                        var signal = _device.AddSignal(Signal.Direction.Incoming, wrappedMap.GetName(), wrappedMap.GetVectorLength(), type, wrappedMap.Units!);
-                        if (wrappedMap.Bounds != null)
-                        {
-                            var bounds = wrappedMap.Bounds.Value;
-                            signal.SetProperty(Property.Min, bounds.min);
-                            signal.SetProperty(Property.Max, bounds.max);
-                        }
-                        
-                        _properties.Add((signal, wrappedMap, new Mapper.Time()));
-                        signal.SetValue(wrappedMap.GetValue());
-                    }
-                
-                }
-            }
-            foreach (var (signal, mapped, lastChanged) in _properties)
-            {
-                var value = signal.GetValue();
-                // check if the value has changed
-                if (value.Item2 > lastChanged)
-                {
-                    // the value was changed on the network, so we should update the local value
-                    mapped.SetObject(value.Item1);
-                    lastChanged.Set(value.Item2);
-                }
-                else
-                {
-                    // no remote updates have happened, so push our local value
-                    signal.SetValue(mapped.GetValue());
-                    lastChanged.Set(_device.GetTime());
-                }
-            
-            }
-        }
-
-        if (!nonBlockingPolling)
-        {
-            _handle = _job.Schedule();
-        }
-    }
-    
     /// <summary>
-    /// Register a property extractor for a specific component type.
+    ///     Either adds the property to a collection as an instance of an existing signal or creates a new signal
+    /// </summary>
+    private void RegisterProperty(IBoundProperty property, Component comp, LibmapperComponentList list)
+    {
+        var spec = new SignalSpec(property.GetName(), comp.gameObject, property, list);
+        foreach (var existing in _properties)
+            if (existing.CanAccept(spec))
+            {
+                Debug.Log($"Added {spec.Property.GetName()} to existing collection");
+                existing.Add(spec);
+                return;
+            }
+
+        var collection = new SignalCollection(_device, spec);
+        _properties.Add(collection);
+        Debug.Log($"Created new collection for {spec.Property.GetName()}");
+    }
+
+    /// <summary>
+    ///     Register a property extractor for a specific component type.
     /// </summary>
     /// <param name="extractor">Object that will produce a list of properties when given a component</param>
     /// <typeparam name="T">Component type being targeted</typeparam>
     public void RegisterExtractor<T>(IPropertyExtractor<T> extractor) where T : Component
     {
         if (_frozen)
-        {
-            throw new InvalidOperationException("Can't register new extractors after Freeze(). Make sure \"Use API\" is checked in the inspector.");
-        }
+            throw new InvalidOperationException(
+                "Can't register new extractors after construction.");
         if (typeof(T) == typeof(Component))
-        {
             throw new ArgumentException("Can't override generic extractor for Component type");
-        }
         _extractors[typeof(T)] = extractor;
     }
-    
+
     /// <summary>
-    /// Register a type converter for libmapper to automatically convert complex types into simple types.
+    ///     Register a type converter for libmapper to automatically convert complex types into simple types.
     /// </summary>
     /// <param name="converter">A type mapper</param>
     /// <typeparam name="T">The complex type</typeparam>
@@ -191,71 +167,40 @@ public class LibmapperDevice : MonoBehaviour
     public void RegisterTypeConverter<T, U>(ITypeConverter<T, U> converter) where T : notnull where U : notnull
     {
         if (_frozen)
-        {
-            throw new InvalidOperationException("Can't register new converters after Freeze(). Make sure \"Use API\" is checked in the inspector.");
-        }
+            throw new InvalidOperationException(
+                "Can't register new converters after construction.");
         _converters[typeof(T)] = converter;
     }
-    
-    /// <summary>
-    /// Add a new component to be exposed by the device. 
-    /// </summary>
-    /// <param name="component"></param>
-    /// <exception cref="InvalidOperationException">If called while the device is frozen</exception>
-    public void AddComponent(Component component)
-    {
-        if (_frozen)
-        {
-            throw new InvalidOperationException("Can't add new components after Freeze(). Make sure \"Use API\" is checked in the inspector.");
-        }
-        componentsToExpose.Add(component);
-    }
 
     /// <summary>
-    /// Freeze the device, preventing new extractors, mappers, or components from being added.
+    ///     Freeze the device, preventing new extractors, mappers, or components from being added.
     /// </summary>
+    [Obsolete("Override RegisterExtensions to add new extractors or converters")]
     public void Freeze()
     {
-        _frozen = true;
+        throw new NotSupportedException("Override RegisterExtensions to add new extractors or converters");
     }
 
-    public static Mapper.Type CreateLibmapperTypeFromPrimitive(Type t)
+    public static MapperType CreateLibmapperTypeFromPrimitive(Type t)
     {
-        if (t.IsArray)
-        {
-            t = t.GetElementType();
-        }
+        if (t.IsArray) t = t.GetElementType();
         if (t == typeof(float))
-        {
-            return Mapper.Type.Float;
-        }
-        else if (t == typeof(int))
-        {
-            return Mapper.Type.Int32;
-        }
-        else if (t == typeof(double))
-        {
-            return Mapper.Type.Double;
-        }
-        else
-        {
-            return Mapper.Type.Null;
-        }
+            return MapperType.Float;
+        if (t == typeof(int))
+            return MapperType.Int32;
+        if (t == typeof(double))
+            return MapperType.Double;
+        return MapperType.Null;
     }
 
 
-    private System.Collections.Generic.List<IBoundProperty> CreateMapping(Component target)
+    private List<IBoundProperty> ExtractProperties(Component target)
     {
-        if (_extractors.ContainsKey(target.GetType()))
-        {
-            return _extractors[target.GetType()].ExtractProperties(target);
-        }
-        else
-        {
-            // use default extractor
-            _defaultExtractor ??= new DefaultPropertyExtractor(_converters);
-            return _defaultExtractor.ExtractProperties(target);
-        }
+        if (_extractors.ContainsKey(target.GetType())) return _extractors[target.GetType()].ExtractProperties(target);
+
+        // use default extractor
+        _defaultExtractor ??= new DefaultPropertyExtractor(_converters);
+        return _defaultExtractor.ExtractProperties(target);
     }
 }
 
@@ -285,7 +230,7 @@ internal class WrappedBoundProperty(IBoundProperty inner, ITypeConverter convert
     {
         return inner.GetName();
     }
-    
+
     public string? Units => inner.Units;
     public (float min, float max)? Bounds => inner.Bounds;
 }
@@ -301,4 +246,3 @@ public readonly struct PollJob(IntPtr devicePtr, int pollTime) : IJob
         device.Poll(pollTime);
     }
 }
-

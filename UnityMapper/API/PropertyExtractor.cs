@@ -1,4 +1,5 @@
 using System.Reflection;
+using Mapper;
 using UnityEngine;
 
 namespace UnityMapper.API;
@@ -42,19 +43,23 @@ public class DefaultPropertyExtractor(Dictionary<Type, ITypeConverter> _converte
 {
     public List<IBoundProperty> ExtractProperties(Component target)
     {
-        var candidates = target.GetType().GetFields(BindingFlags.Instance)
-            .Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
-            .ToList();
+        var candidates = target.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public);
+            /*.Where(field => field.IsPublic || field.GetCustomAttribute<SerializeField>() != null) // unity rules
+            .ToList();*/
         
         Debug.Log("Extracting properties from " + target.GetType());
         var l = new List<IBoundProperty>();
         foreach (var prop in candidates)
         {
+            if (prop.GetCustomAttribute<MapperIgnoreAttribute>() != null)
+            {
+                continue;
+            }
             var baseType = LibmapperDevice.CreateLibmapperTypeFromPrimitive(prop.FieldType);
-            if (baseType == Mapper.Type.Null && !_converters.ContainsKey(prop.FieldType)) continue;
+            if (baseType == MapperType.Null && !_converters.ContainsKey(prop.FieldType)) continue;
             var mapped = new BoundClassField(prop, target);
                 
-            if (baseType == Mapper.Type.Null) // this type needs to be wrapped in order to be turned into a signal
+            if (baseType == MapperType.Null) // this type needs to be wrapped in order to be turned into a signal
             {
                 var converter = _converters[prop.FieldType];
                 l.Add(new WrappedBoundProperty(mapped, converter));
