@@ -61,11 +61,11 @@ public class SignalCollection
         foreach (var id in _signals.Keys)
         {
             var newVal = _signal.GetValue(id);
+            
             if ((newVal.Item2 > _lastUpdates[id] || _spec.Type == SignalType.WriteOnly) 
                 && _spec.Type != SignalType.ReadOnly) // only read from network if this signal is not a read-only signal 
             {
                 // read value from network
-                _lastUpdates[id] = newVal.Item2;
                 if (newVal.Item1 == null) continue;
                 _signals[id].Property.SetObject(newVal.Item1);
             }
@@ -74,6 +74,7 @@ public class SignalCollection
                 // push value to network
                 _signal.SetValue(_signals[id].Property.GetValue(), id);
             }
+            _lastUpdates[id] = _device.Time;
         }
     }
 
