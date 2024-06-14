@@ -17,7 +17,6 @@ public class SignalCollection
     private SignalSpec _spec;
     private readonly Dictionary<ulong, SignalSpec> _signals = [];
     private readonly Dictionary<ulong, Time> _lastUpdates = [];
-    private ulong nextId = 10;
     
     /// <summary>
     /// Create a new SignalCollection with a single default instance.
@@ -36,8 +35,9 @@ public class SignalCollection
             _signal.SetProperty(Property.Min, spec.Property.Bounds.Value.min);
             _signal.SetProperty(Property.Max, spec.Property.Bounds.Value.max);
         }
-        
-        var id = nextId++;
+
+        var iid = spec.Owner.GetInstanceID();
+        var id = iid < 0 ? (ulong) Math.Abs(iid) : ((ulong) iid) + Int32.MaxValue;
         spec.AssignInstanceID(id);
         _signals.Add(id, spec);
         _signal.ReserveInstance((int) id);
@@ -86,7 +86,8 @@ public class SignalCollection
             throw new InvalidOperationException("Cannot accept signal");
         }
 
-        var id = nextId++;
+        var iid = toAdd.Owner.GetInstanceID();
+        var id = iid < 0 ? (ulong) Math.Abs(iid) : ((ulong) iid) + Int32.MaxValue;
         toAdd.AssignInstanceID(id);
         _signals.Add(id, toAdd);
         _signal.ReserveInstance((int) id);
