@@ -41,7 +41,7 @@ Your GameObject with the `Libmapper Device` shoud be a parent to any GameObjects
 search for any children with the `Libmapper Component List` component and scan them.
 
 The `Libmapper Component List` component allows you to specify which components you want to expose. Simply drag and drop any component from the
-GameObject you want to expose onto the list, and as long as it is a child or descendent of the GameObject with the `Libmapper Device`, it will be exposed as a signal.
+GameObject onto the list and (almost) all properties visibile in the inspector will be exposed as a libmapper signal.
 
 If there are properties with similar names at a similar path (e.g cloned objects next to each other in the hierarchy),
 UnityMapper will express these as instances of the same signal. UnityMapper will group objects with the same name, dropping a `.[0-9]+` suffix.
