@@ -61,6 +61,7 @@ public class SignalCollection
         foreach (var id in _signals.Keys)
         {
             var newVal = _signal.GetValue(id);
+            var localVal = _signals[id].Property.GetValue();
             
             if ((newVal.Item2 > _lastUpdates[id] || _spec.Type == SignalType.WriteOnly) 
                 && _spec.Type != SignalType.ReadOnly) // only read from network if this signal is not a read-only signal 
@@ -69,10 +70,10 @@ public class SignalCollection
                 if (newVal.Item1 == null) continue;
                 _signals[id].Property.SetObject(newVal.Item1);
             }
-            else
+            else if (newVal.Item1 != localVal)
             {
                 // push value to network
-                _signal.SetValue(_signals[id].Property.GetValue(), id);
+                _signal.SetValue(localVal, id);
             }
             _lastUpdates[id] = _device.Time;
         }
