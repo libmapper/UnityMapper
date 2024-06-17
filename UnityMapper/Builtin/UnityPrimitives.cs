@@ -5,13 +5,13 @@ namespace UnityMapper.Builtin;
 
 public class Vector3Converter : ITypeConverter<Vector3, float[]>
 {
-    float[] buffer = new float[3];
+    private float[] _buffer = new float[3];
     public float[] CreateSimple(Vector3 complex)
     {
-        buffer[0] = complex.x;
-        buffer[1] = complex.y;
-        buffer[2] = complex.z;
-        return buffer;
+        _buffer[0] = complex.x;
+        _buffer[1] = complex.y;
+        _buffer[2] = complex.z;
+        return _buffer;
     }
 
     public Vector3 CreateComplex(float[] simple)
@@ -24,12 +24,12 @@ public class Vector3Converter : ITypeConverter<Vector3, float[]>
 
 public class Vector2Converter : ITypeConverter<Vector2, float[]>
 {
-    private float[] buffer = new float[2];
+    private float[] _buffer = new float[2];
     public float[] CreateSimple(Vector2 complex)
     {
-        buffer[0] = complex.x;
-        buffer[1] = complex.y;
-        return buffer;
+        _buffer[0] = complex.x;
+        _buffer[1] = complex.y;
+        return _buffer;
     }
 
     public Vector2 CreateComplex(float[] simple)
@@ -42,14 +42,14 @@ public class Vector2Converter : ITypeConverter<Vector2, float[]>
 
 public class QuaternionConverter : ITypeConverter<Quaternion, float[]>
 {
-    private float[] buffer = new float[4];
+    private float[] _buffer = new float[4];
     public float[] CreateSimple(Quaternion complex)
     {
-        buffer[0] = complex.x;
-        buffer[1] = complex.y;
-        buffer[2] = complex.z;
-        buffer[3] = complex.w;
-        return buffer;
+        _buffer[0] = complex.x;
+        _buffer[1] = complex.y;
+        _buffer[2] = complex.z;
+        _buffer[3] = complex.w;
+        return _buffer;
     }
 
     public Quaternion CreateComplex(float[] simple)
@@ -63,14 +63,14 @@ public class QuaternionConverter : ITypeConverter<Quaternion, float[]>
 public class ColorConverter : ITypeConverter<Color, float[]>
 {
     public int VectorLength => 4;
-    float[] buffer = new float[4];
+    private float[] _buffer = new float[4];
     public float[] CreateSimple(Color complex)
     {
-        buffer[0] = complex.r;
-        buffer[1] = complex.g;
-        buffer[2] = complex.b;
-        buffer[3] = complex.a;
-        return buffer;
+        _buffer[0] = complex.r;
+        _buffer[1] = complex.g;
+        _buffer[2] = complex.b;
+        _buffer[3] = complex.a;
+        return _buffer;
     }
 
     public Color CreateComplex(float[] simple)
