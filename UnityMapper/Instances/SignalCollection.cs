@@ -60,22 +60,19 @@ public class SignalCollection
     {
         foreach (var id in _signals.Keys)
         {
-            var newVal = _signal.GetValue(id);
-            var localVal = _signals[id].Property.GetValue();
-            
-            if ((newVal.Item2 > _lastUpdates[id] || _spec.Type == SignalType.WriteOnly) 
-                && _spec.Type != SignalType.ReadOnly) // only read from network if this signal is not a read-only signal 
+            var status = _signal.FetchStatus((long) id);
+            if (status.HasFlag(Signal.StatusFlags.SetRemote))
             {
-                // read value from network
-                if (newVal.Item1 == null) continue;
-                _signals[id].Property.SetObject(newVal.Item1);
+                // update local
+                var value = _signal.GetValue(id);
+                _signals[id].Property.SetObject(value.Item1);
             }
-            else if (newVal.Item1 != localVal)
+            else
             {
-                // push value to network
-                _signal.SetValue(localVal, id);
+                //push local
+                var value = _signals[id].Property.GetValue();
+                _signal.SetValue(value, id);
             }
-            _lastUpdates[id] = _device.Time;
         }
     }
 
