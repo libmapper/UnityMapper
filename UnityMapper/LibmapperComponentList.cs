@@ -22,7 +22,5 @@ public enum SignalType
 {
     ReadOnly,
     [InspectorName("Read and Write")]
-    ReadWrite,
-    // TODO: This option should be removed once the cause of the timestamp bug is found
-    WriteOnly
+    ReadWrite
 }
