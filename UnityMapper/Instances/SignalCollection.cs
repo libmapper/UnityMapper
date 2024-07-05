@@ -36,6 +36,8 @@ public class SignalCollection
             _signal.SetProperty(Property.Max, spec.Property.Bounds.Value.max);
         }
 
+        _signal.SetProperty(Property.Ephemeral, spec.Ephemeral);
+
         var iid = spec.Owner.GetInstanceID();
         var id = iid < 0 ? (ulong) Math.Abs(iid) : ((ulong) iid) + Int32.MaxValue;
         spec.AssignInstanceID(id);
