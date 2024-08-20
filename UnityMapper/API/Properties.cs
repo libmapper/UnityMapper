@@ -41,6 +41,16 @@ public interface IBoundProperty
     object GetValue();
 
     /// <summary>
+    /// Called by UnityMapper to reset the property to a default state.
+    ///
+    /// This is called usually when an instance is released.
+    /// </summary>
+    void Reset()
+    {
+        
+    }
+
+    /// <summary>
     /// Used to name the corresponding signal in the libmapper graph. 
     /// </summary>
     /// <remarks>
