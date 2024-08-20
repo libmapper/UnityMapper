@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Mapper.NET" Version="2.4.7-alpha2" />
+    <PackageReference Include="Mapper.NET" Version="2.4.7.1" />
     <PackageReference Include="Unity3D" Version="2.1.3" />
   </ItemGroup>
 

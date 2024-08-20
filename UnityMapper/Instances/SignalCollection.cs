@@ -63,7 +63,7 @@ public class SignalCollection
         foreach (var id in _signals.Keys)
         {
             var status = _signal.FetchStatus((long) id);
-            if (status.HasFlag(Signal.StatusFlags.SetRemote))
+            if (status.HasFlag(Signal.StatusFlags.UpdateRemote))
             {
                 // update local
                 var value = _signal.GetValue(id);
