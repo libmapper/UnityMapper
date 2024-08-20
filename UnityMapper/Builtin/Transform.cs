@@ -18,6 +18,8 @@ public class TransformExtractor : IPropertyExtractor<Transform>
 
 internal class BoundPosition(Transform transform) : IBoundProperty
 {
+    private Vector3 originalPos = transform.position;
+    
     public void SetObject(object val)
     {
         var value = (Single[])val;
@@ -45,6 +47,11 @@ internal class BoundPosition(Transform transform) : IBoundProperty
     
     public string? Units => "m";
     public (float min, float max)? Bounds => null;
+
+    public void Reset()
+    {
+        transform.position = originalPos;
+    }
 }
 internal class BoundScale(Transform transform) : IBoundProperty
 {
