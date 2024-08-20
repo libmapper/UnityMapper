@@ -63,6 +63,11 @@ public class SignalCollection
         foreach (var id in _signals.Keys)
         {
             var status = _signal.FetchStatus((long) id);
+            if (status.HasFlag(Signal.StatusFlags.ReleaseUpstream))
+            {
+                _signals[id].Property.Reset();
+                continue;
+            }
             if (status.HasFlag(Signal.StatusFlags.UpdateRemote))
             {
                 // update local
