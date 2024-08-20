@@ -38,7 +38,7 @@ public class SignalCollection
 
         _signal.SetProperty(Property.Ephemeral, spec.Ephemeral);
 
-        var iid = spec.Owner.GetInstanceID();
+        var iid = spec.OwningList.GetInstanceID();
         var id = iid < 0 ? (ulong) Math.Abs(iid) : ((ulong) iid) + Int32.MaxValue;
         spec.AssignInstanceID(id);
         _signals.Add(id, spec);
@@ -90,7 +90,7 @@ public class SignalCollection
             throw new InvalidOperationException("Cannot accept signal");
         }
 
-        var iid = toAdd.Owner.GetInstanceID();
+        var iid = toAdd.OwningList.GetInstanceID();
         var id = iid < 0 ? (ulong) Math.Abs(iid) : ((ulong) iid) + Int32.MaxValue;
         toAdd.AssignInstanceID(id);
         _signals.Add(id, toAdd);
