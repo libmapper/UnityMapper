@@ -65,6 +65,10 @@ public class SignalCollection
             var status = _signal.FetchStatus((long) id);
             if (status.HasFlag(Signal.StatusFlags.ReleaseUpstream))
             {
+                if (_spec.Ephemeral)
+                {
+                    _signal.Release(id);
+                }
                 _signals[id].Property.Reset();
                 continue;
             }
