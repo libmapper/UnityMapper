@@ -4,8 +4,8 @@ namespace UnityMapper;
 
 public class LibmapperComponentList : MonoBehaviour
 {
-    public event EventHandler<List<Component>>? Destroyed; 
-    
+    public event EventHandler<List<Component>>? Destroyed;
+
     public bool isEphemeral = false;
     public bool canInstance = true;
     public SignalType type = SignalType.ReadWrite;
